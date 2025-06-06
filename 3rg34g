@@ -1,0 +1,2773 @@
+--[[
+    mezcla 25 ARADUS
+    Combinacion equilibrada (v24):
+    1. ADS brazos y retextura de armas
+    2. Visibilidad variable de asiento por path
+    3. coso de brazos ADS
+    4. Modificacion base del personaje (masculino)
+    5. Neon (Luz del foco)
+    6. Parche reactivo de vida
+]]
+
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local PhysicsService = game:GetService("PhysicsService") -- Added PhysicsService
+
+-- LocalPlayer & PlayerGui
+local localPlayer = Players.LocalPlayer
+if not localPlayer then
+    localPlayer = Players.PlayerAdded:Wait()
+end
+local PlayerGui = localPlayer:WaitForChild("PlayerGui")
+
+-- Chat sound effect
+if localPlayer then
+    localPlayer.Chatted:Connect(function(message)
+        -- Optional: Ignore commands if they start with "/"
+        if message:sub(1,1) ~= "/" then
+            local chatSound = Instance.new("Sound")
+            chatSound.SoundId = "rbxassetid://7424802049"
+            chatSound.Parent = SoundService 
+            chatSound:Play()
+            chatSound.Ended:Connect(function()
+                chatSound:Destroy()
+            end)
+        end
+    end)
+end
+
+--============================================================================
+-- CONFIGURATIONS (Script 1 Base)
+--============================================================================
+-- Laser toggle key removed
+local s1_CONFIG_OriginalMeshBlockEnabled = true
+local s1_CONFIG_UniqueIdMeshBlockEnabled = true
+local s1_CONFIG_PermanentWeaponMeshesEnabled = true
+
+local s2_CONFIG_M4ToolName = "M4 Carbine"
+local s2_CONFIG_M4TargetPartName = "Handle"
+local s2_CONFIG_M4MeshSourcePartName = "Handle"
+-- M4 Laser toggle key removed
+local s2_CONFIG_M4Enabled = true
+
+local s3_CONFIG_GlockToolName = "Glock 17"
+local s3_CONFIG_GlockTargetPartName = "Handle"
+local s3_CONFIG_GlockMeshSourcePartName = "GlockMeshSource"
+-- Glock Laser toggle key removed
+local s3_CONFIG_GlockEnabled = true
+
+-- ADS and Procedural Arm Movement features removed
+
+--============================================================================
+-- MESH CONFIGURATIONS (Script 1 Base)
+--============================================================================
+local permanentWeapon_customMeshes = {
+    { id = "8283914640", scale = Vector3.new(0.000, 0.000, 0.000), offset = CFrame.new(-1.280, 0.300, -1.740) * CFrame.fromEulerAnglesXYZ(math.rad(-35.41), math.rad(0.00), math.rad(-0.00)), color = Color3.fromRGB(0, 0, 0) },
+    { id = "8036543617", scale = Vector3.new(0.020, 0.020, 0.025), offset = CFrame.new(0.030, 0.300, -0.740) * CFrame.fromEulerAnglesXYZ(math.rad(8.85), math.rad(0.00), math.rad(14.75)), color = Color3.fromRGB(0, 0, 0) },
+    { id = "8322150819", scale = Vector3.new(0.017, 0.020, 0.025), offset = CFrame.new(-0.030, 0.600, -0.700) * CFrame.fromEulerAnglesXYZ(math.rad(8.85), math.rad(0.00), math.rad(11.80)), color = Color3.fromRGB(50, 48, 45) },
+    { id = "8002223965", scale = Vector3.new(0.033, 0.029, 0.053), offset = CFrame.new(0.300, 0.250, -0.750) * CFrame.fromEulerAnglesXYZ(math.rad(-171.15), math.rad(2.95), math.rad(171.15)), color = Color3.fromRGB(30, 30, 30) },
+    { id = "8104952876", scale = Vector3.new(0.070, 0.080, 0.070), offset = CFrame.new(0.360, 0.360, 0.790) * CFrame.fromEulerAnglesXYZ(math.rad(91.48), math.rad(0.00), math.rad(-94.43)), color = Color3.fromRGB(200, 150, 200), textureId = "18270890622" },
+    { id = "8104953242", scale = Vector3.new(0.070, 0.049, 0.070), offset = CFrame.new(0.130, 0.220, 0.790) * CFrame.fromEulerAnglesXYZ(math.rad(91.48), math.rad(0.00), math.rad(-91.48)), color = Color3.fromRGB(150, 200, 150), textureId = "13512722294" },
+    { id = "8104954159", scale = Vector3.new(0.070, 0.060, 0.090), offset = CFrame.new(0.330, -0.130, 0.790) * CFrame.fromEulerAnglesXYZ(math.rad(91.48), math.rad(0.00), math.rad(-91.48)), color = Color3.fromRGB(255, 0, 0), textureId = "9728813119" },
+    { id = "8104954375", scale = Vector3.new(0.070, 0.070, 0.070), offset = CFrame.new(0.850, 0.360, 0.750) * CFrame.fromEulerAnglesXYZ(math.rad(91.48), math.rad(0.00), math.rad(-91.48)), color = Color3.fromRGB(0, 150, 255), textureId = "13512722294" }
+}
+-- permanentWeapon_laserConfig removed
+local s1_m4CarbineControlledMeshIds = { ["8104952876"] = true, ["8104953242"] = true, ["8104954159"] = true, ["8104954375"] = true }
+
+local m4_customMeshes = {
+    { meshId = "8104954375", textureId = "13512722294", scale = Vector3.new(0.082, 0.086, 0.086), offset = CFrame.new(-1.020, -0.140, 0.620) * CFrame.fromEulerAnglesXYZ(math.rad(94.430), math.rad(-88.520), math.rad(0.500)), color = Color3.fromRGB(128, 128, 128) },
+    { meshId = "8104954159", textureId = "9728813119", scale = Vector3.new(0.000, 0.000, 0.000), offset = CFrame.new(0.000, 0.000, 0.620) * CFrame.fromEulerAnglesXYZ(math.rad(0.000), math.rad(0.000), math.rad(0.000)), color = Color3.fromRGB(128, 128, 128) },
+    { meshId = "8104953242", textureId = "13512722294", scale = Vector3.new(0.139, 0.057, 0.074), offset = CFrame.new(-0.850, -0.150, -0.100) * CFrame.fromEulerAnglesXYZ(math.rad(-91.480), math.rad(88.520), math.rad(-180.000)), color = Color3.fromRGB(128, 128, 128) },
+    { meshId = "8104952876", textureId = "18270890622", scale = Vector3.new(0.090, 0.090, 0.090), offset = CFrame.new(-1.020, -0.130, 0.070) * CFrame.fromEulerAnglesXYZ(math.rad(-82.620), math.rad(88.520), math.rad(174.100)), color = Color3.fromRGB(128, 128, 128) },
+}
+local m4_partsToDeleteNames = { "Base1", "Base2", "FlashlightBody", "Flashligh", "Magazine", "Metal" }
+-- m4_laserConfig removed
+
+local glock_customMeshes = {
+    { id = "8036543617", scale = Vector3.new(0.035, 0.035, 0.035), offset = CFrame.new(-0.070, -0.130, 0.090) * CFrame.fromEulerAnglesXYZ(math.rad(0.00), math.rad(0.00), math.rad(0.00)), color = Color3.fromRGB(0, 0, 0) },
+    { id = "8322150819", scale = Vector3.new(0.030, 0.030, 0.030), offset = CFrame.new(-0.070, 0.390, 0.100) * CFrame.fromEulerAnglesXYZ(math.rad(0.00), math.rad(0.00), math.rad(0.00)), color = Color3.fromRGB(50, 48, 45) },
+    { id = "8002223965", scale = Vector3.new(0.074, 0.057, 0.078), offset = CFrame.new(0.360, -0.230, 0.100) * CFrame.fromEulerAnglesXYZ(math.rad(0.00), math.rad(0.00), math.rad(26.56)), color = Color3.fromRGB(30, 30, 30) },
+}
+local glock_partsToDeleteNames = { "Base", "BaseDown", "BaseTop", "Black", "Flashlight", "Magazine", "Metal" }
+-- glock_laserConfig removed
+
+--============================================================================
+-- CONFIGURATIONS (Script 2 - Neon/Seat Visibility)
+--============================================================================
+local s4_TARGET_SEAT_NAME = "DriveSeat" 
+local s4_HELMET_OFF_SOUND_ID = "rbxassetid://89857156580830"
+local s4_meshBlockConfigs = {
+    {
+        id = "A73C06D5", anchorPartName = "Head",
+        c0 = CFrame.new(-0.694, 0.417, -0.139) * CFrame.Angles(math.rad(-12.500), math.rad(-90.000), math.rad(-15.000)),
+        meshId = "rbxassetid://14405323278", scale = Vector3.new(0.444, 0.512, 0.512),
+        vertexColor = Vector3.new(1.000, 1.000, 1.000), textureId = "rbxassetid://75115365279050",
+        transparency = 0
+    },
+    {
+        id = "AAFC3904", anchorPartName = "Head",
+        c0 = CFrame.new(0.000, 0.139, 0.069) * CFrame.Angles(math.rad(0.000), math.rad(90.000), math.rad(1.250)),
+        meshId = "rbxassetid://16267921979", scale = Vector3.new(1.000, 1.000, 0.994),
+        vertexColor = Vector3.new(0.784, 0.784, 0.906), textureId = "rbxassetid://75115365279050",
+        transparency = 0
+    }
+}
+local s4_originalMaterial_Neon = Enum.Material.Neon
+local s4_offMaterial_Neon = Enum.Material.SmoothPlastic
+
+--============================================================================
+-- CONFIGURATIONS (Script 3 - Limb Meshes)
+--============================================================================
+local s5_meshPartNamePattern = "MeshBlock_%s"
+local s5_motorNamePattern = "MeshMotor6D_%s"
+local s5_meshConfigurations = {
+    {
+        uniqueBlockId = "6B32BA9A", preferredPartNames = {"LeftUpperArm"},
+        motorC0 = CFrame.new(0.000, 0.139, 0.000) * CFrame.Angles(math.rad(0.000), math.rad(3.750), math.rad(0.000)),
+        meshId = "rbxassetid://17843122746", meshScale = Vector3.new(0.950, 0.950, 0.950),
+        transparency = 0, vertexColor = Vector3.new(0.816, 0.847, 0.878), textureId = "rbxassetid://75115365279050"
+    },
+    {
+        uniqueBlockId = "EC5AF860", preferredPartNames = {"RightUpperArm"},
+        motorC0 = CFrame.new(0.000, 0.139, 0.000) * CFrame.Angles(math.rad(0.000), math.rad(3.750), math.rad(0.000)),
+        meshId = "rbxassetid://17843138213", meshScale = Vector3.new(0.950, 0.950, 0.950),
+        transparency = 0, vertexColor = Vector3.new(0.816, 0.847, 0.878), textureId = "rbxassetid://75115365279050"
+    },
+    {
+        uniqueBlockId = "9555A0A1", preferredPartNames = {"LeftUpperLeg"},
+        motorC0 = CFrame.new(0.000, -0.208, -0.069) * CFrame.Angles(math.rad(-16.250), math.rad(0.000), math.rad(0.000)),
+        meshId = "rbxassetid://18970653948", meshScale = Vector3.new(1.100, 1.100, 1.100),
+        transparency = 0, vertexColor = Vector3.new(0.816, 0.847, 0.878), textureId = "rbxassetid://75115365279050"
+    },
+    {
+        uniqueBlockId = "DB6D5797", preferredPartNames = {"RightUpperLeg"},
+        motorC0 = CFrame.new(0.000, -0.208, -0.069) * CFrame.Angles(math.rad(-16.250), math.rad(0.000), math.rad(0.000)),
+        meshId = "rbxassetid://18970653948", meshScale = Vector3.new(1.100, 1.100, 1.100),
+        transparency = 0, vertexColor = Vector3.new(0.816, 0.847, 0.878), textureId = "rbxassetid://75115365279050"
+    }
+}
+
+--============================================================================
+-- CONFIGURATIONS (Character Customization)
+--============================================================================
+local charMod_itemsARemover = { "Pants", "Shirt", "Pal Hair" }
+-- Body Colors are now set directly in applyCharacterModifications
+
+--============================================================================
+-- CONFIGURATIONS (Head Accessory & Neon)
+--============================================================================
+local headAccessory_uniqueBlockId = "2E17D1AF"
+local headAccessory_neonConfig = {
+    Offset = Vector3.new(-0.650, 0.580, -0.280),
+    RotationDegrees = Vector3.new(0.000, 0.000, -45.100),
+    NeonColor = Color3.fromRGB(152, 245, 249),
+    LightColor = Color3.fromRGB(0, 0, 0),
+    Diameter = 0.05,
+    Thickness = 0.05,
+    GlowIntensity = 0, -- Initially off, can be changed (e.g. 5 for on)
+    GlowDirection = "Up"
+}
+local headAccessory_meshBlockMeshId = "rbxassetid://12200619600"
+local headAccessory_meshBlockScale = Vector3.new(1.000, 1.130, 1.000)
+local headAccessory_meshBlockTextureId = "rbxassetid://75115365279050"
+local headAccessory_meshBlockC0 = CFrame.new(0.000, 0.278, 0.208) * CFrame.Angles(math.rad(0.000), math.rad(0.000), math.rad(0.000))
+local BIMBOLOCK_NEON_CHANGE_SOUND_ID = "rbxassetid://72985187238486"
+
+
+--============================================================================
+-- CONFIGURATIONS (Workspace Decal Block - Player Health)
+--============================================================================
+local decalBlock_targetParentName = localPlayer.Name 
+local decalBlock_targetMeshBlockName = "MeshBlock"
+local decalBlock_decalId = "rbxassetid://83713840626437"
+local decalBlock_size = Vector3.new(0.400, 0.400, 0.001)
+local decalBlock_relativePositionOffset = Vector3.new(-0.410, 0.706, 0.690)
+local decalBlock_relativeRotationOffsetDeg = Vector3.new(0, 180, 0) -- Euler angles in degrees
+local decalBlock_pixelsPerStud = 100
+local decalBlock_imageTransparency = 0.000
+local decalBlock_defaultImageColor = Color3.new(0.69, 0.98, 1.00)
+local decalBlock_lowHealthColor = Color3.new(1, 0, 0)
+local decalBlock_minHealthThreshold = 0.2 -- 20% health
+
+--============================================================================
+-- CONFIGURATIONS (Workspace Decal Block - Vehicle Health)
+--============================================================================
+local vehicleDecal_targetParentName = localPlayer.Name -- Anchored to player character model
+local vehicleDecal_targetMeshBlockName = "MeshBlock"   -- Anchored to player's MeshBlock
+local vehicleDecal_size = Vector3.new(0.400, 0.400, 0.001) -- Same size as player health decal
+
+-- Customizable offsets for vehicle health decal
+local vehicleDecal_offsetX = 0 -- Adjust left/right (negative/positive)
+local vehicleDecal_offsetY = -0.45-- Adjust up/down (negative/positive), default is below player health
+local vehicleDecal_offsetZ = 0.016 -- Adjust forward/backward (negative/positive)
+
+local vehicleDecal_relativePositionOffset = Vector3.new(
+    decalBlock_relativePositionOffset.X + vehicleDecal_offsetX,
+    decalBlock_relativePositionOffset.Y + vehicleDecal_offsetY,
+    decalBlock_relativePositionOffset.Z + vehicleDecal_offsetZ
+)
+local vehicleDecal_relativeRotationOffsetDeg = Vector3.new(0, 180, 0)
+local vehicleDecal_pixelsPerStud = 100
+local vehicleDecal_imageTransparency = 0.000
+
+local vehicleDecal_highHealthDecalId = "rbxassetid://74233200980065"
+local vehicleDecal_midHealthDecalId = "rbxassetid://114408262736053"
+local vehicleDecal_lowHealthDecalId = "rbxassetid://122233196786116"
+
+local vehicleDecal_maxHealth = 500
+local vehicleDecal_midHealthThreshold = 250
+local vehicleDecal_lowHealthThreshold = 30
+
+local vehicleDecal_highHealthColor = Color3.fromRGB(152, 245, 249) -- Blueish
+local vehicleDecal_lowHealthColor = Color3.fromRGB(255, 0, 0)   -- Red
+
+--============================================================================
+-- CONFIGURATIONS (Vehicle Health Monitor)
+--============================================================================
+local VEHICLE_HEALTH_SOUND_ID = "rbxassetid://678886685"
+local VEHICLE_HEALTH_SOUND_VOLUME = 2
+local VEHICLE_HEALTH_THRESHOLD = 30
+
+--============================================================================
+-- CONFIGURATIONS (Vehicle Attached Mesh)
+--============================================================================
+local vehicleAttachedMesh_uniqueBlockId = "E42ECD88"
+local vehicleAttachedMesh_anchorPathInVehicle = "Body.Body" -- Relative to vehicle model
+local vehicleAttachedMesh_C0 = CFrame.new(2.361, 2.847, 6.458) * CFrame.Angles(math.rad(1.250), math.rad(-68.750), math.rad(10.000))
+local vehicleAttachedMesh_meshId = "rbxassetid://10017566754"
+local vehicleAttachedMesh_scale = Vector3.new(0.600, 0.560, 0.600)
+local vehicleAttachedMesh_textureId = "rbxassetid://118933349570055"
+local vehicleAttachedMesh_vertexColor = Vector3.new(1.000, 1.000, 1.000)
+local vehicleAttachedMesh_transparency = 0
+
+--============================================================================
+-- DECAL ANIMATION PARAMETERS
+--============================================================================
+-- local DECAL_ANIM_AMPLITUDE = 0.02 -- How much the decal bobs up and down -- Removed as per request
+-- local DECAL_ANIM_SPEED = 2 -- How fast the decal bobs -- Removed as per request
+
+--============================================================================
+-- STATE VARIABLES
+--============================================================================
+local currentCharacter = nil
+local characterConnections = {}
+local mainCharacterAddedConnection = nil -- For the main CharacterAdded event
+
+-- Script 1 State
+local s1_targetAttachmentPart = nil
+local s1_fakeAccessoryParts = {}
+-- s1_fakeLaserPart, s1_laserImpactDot removed
+
+-- Script 2 State (M4 Carbine)
+local s2_currentM4Tool = nil
+local s2_fakeToolParts = {}
+local s2_m4LastMagSize = nil -- For M4 MagCurrentSize tracking
+local s2_m4MagSizeAttributeConnection = nil -- Connection for M4 MagCurrentSize
+-- s2_fakeLaserPart, s2_laserImpactDot removed
+
+-- Script 3 State (Glock 17)
+local s3_currentGlockTool = nil
+local s3_fakeToolParts = {}
+-- s3_fakeLaserPart, s3_laserImpactDot removed
+
+-- ADS and Procedural Arm states removed
+
+-- Script 4 State (Neon/Seat Visibility)
+local s4_areMeshesHiddenBySeat = false
+local s4_humanoidSeatedConnection = nil
+local s4_allCreatedMeshParts = {} 
+local s4_screenGui_Neon
+local s4_toggleButton_Neon
+local s4_isLightOn_Neon = true
+local s4_circlePart_Neon_Instance
+local s4_surfaceLight_Neon_Instance
+local s4_neonCharacterConnections = {}
+local s4_lightStateToRestore_Neon = nil
+
+-- Script 5 State (Limb Meshes)
+local s5_limbMeshParts = {}
+
+-- Head Accessory & Neon State
+local headAccessory_createdParts = {} -- Stores {meshPart, motor, neonPart, weld, pointLight}
+local originalHeadAccessoryNeonColor = headAccessory_neonConfig.NeonColor
+local originalHeadAccessoryLightColor = headAccessory_neonConfig.LightColor
+local headAccessoryIsRedDueToBetaLock = false
+local BimboLockGUIInstance = nil 
+local BimboLockGUIDestroyingConn = nil
+local playerGuiChildAddedConn_BetaLock = nil
+local playerGuiChildRemovedConn_BetaLock = nil
+
+
+-- Workspace Decal Block State (Player Health)
+local decalBlock_instance = nil
+local decalBlock_imageLabel_instance = nil
+local decalBlock_targetPart_instance = nil
+local decalBlock_heartbeatConnection = nil
+local decalBlock_healthChangedConnection = nil
+local decalBlock_diedConnection = nil
+local decalBlock_targetParent_ChildAddedConnection = nil 
+local decalBlock_targetMeshBlock_AncestryChangedConnection = nil 
+
+-- Workspace Decal Block State (Vehicle Health)
+local vehicleDecal_instance = nil
+local vehicleDecal_imageLabel_instance = nil
+local vehicleDecal_targetPart_instance = nil -- Player's MeshBlock (for positioning)
+local vehicleDecal_targetVehicle_instance = nil -- The actual vehicle model
+local vehicleDecal_heartbeatConnection = nil
+local vehicleDecal_vehicleHealthChangedConnection = nil
+local vehicleDecal_vehicleAncestryChangedConnection = nil
+local vehicleDecal_targetParent_ChildAddedConnection = nil -- For player character
+local vehicleDecal_targetMeshBlock_AncestryChangedConnection = nil -- For player MeshBlock
+local vehicleDecal_workspace_VehiclesFolder_ChildAddedConnection = nil
+local vehicleDecal_vehicleFolder_PlayerVehicle_ChildAddedConnection = nil
+
+
+local initialEffectsPlayed = false -- For one-time intro effects
+-- lowHealthWarningPlayed is now character-specific, declared in onCharacterAdded
+
+-- Bullet Casing System State
+local bulletSystem_activeConnections = {}
+local bulletSystem_casingContainer = nil -- Will be initialized by ensureBulletCasingContainer
+local playerCollisionGroupName = "PlayerCharacter_BulletCasingSystem"
+local bulletCollisionGroupName = "Bullets_BulletCasingSystem"
+local bulletSoundIds = {
+    "rbxassetid://2712533735",
+    "rbxassetid://2712534526",
+    "rbxassetid://2712535138"
+}
+
+-- Vehicle Health Monitor State
+local vehicleMonitor_Connections = {}
+local vehicleMonitor_LastHealthValues = {} -- Stores last health for [vehicleInstance] = healthValue
+
+-- Health Reactive Neons State
+local healthReactiveNeonCleaners = {} -- Stores cleanup functions for health reactive neons, keyed by character model
+
+-- Vehicle Attached Mesh State
+local vehicleAttachedMesh_data = { meshPart = nil, motor = nil }
+
+
+-- Early Collision Group Setup for Bullet Casing System
+local function createCollisionGroupOnce(name)
+    if not PhysicsService then return end
+    local success, result = pcall(function()
+        PhysicsService:CreateCollisionGroup(name)
+    end)
+    if not success and not string.find(tostring(result), "already exists") then
+        -- warn("BulletCasingSystem: Failed to create collision group", name, ":", result)
+    end
+end
+
+createCollisionGroupOnce(playerCollisionGroupName)
+createCollisionGroupOnce(bulletCollisionGroupName)
+if PhysicsService then
+    pcall(function()
+        PhysicsService:CollisionGroupSetCollidable(playerCollisionGroupName, bulletCollisionGroupName, false)
+    end)
+end
+
+--============================================================================
+-- BULLET CASING CREATION FUNCTIONS (Moved to higher scope)
+--============================================================================
+local function ensureBulletCasingContainer()
+    if not bulletSystem_casingContainer or not bulletSystem_casingContainer.Parent then
+        bulletSystem_casingContainer = workspace:FindFirstChild("BulletCasingsContainer")
+        if not bulletSystem_casingContainer then
+            bulletSystem_casingContainer = Instance.new("Folder", workspace)
+            bulletSystem_casingContainer.Name = "BulletCasingsContainer"
+        end
+    end
+    return bulletSystem_casingContainer
+end
+
+local function crearBalaGlock()
+    local container = ensureBulletCasingContainer()
+    if not container then 
+        -- warn("BulletCasingSystem (Glock): Casing container not found/ensured.")
+        return 
+    end
+
+    local currentCharacterForBullet = localPlayer.Character
+    if not currentCharacterForBullet then
+        -- warn("BulletCasingSystem (Glock): Player character not found for bullet creation.")
+        return
+    end
+
+    local glockTool = currentCharacterForBullet:FindFirstChild(s3_CONFIG_GlockToolName)
+    if not (glockTool and glockTool:IsA("Tool")) then
+        return
+    end
+
+    local magCurrentSize = glockTool:GetAttribute("MagCurrentSize")
+    if typeof(magCurrentSize) ~= "number" or magCurrentSize <= 0 then
+        return
+    end
+    
+    local currentRoot = currentCharacterForBullet:FindFirstChild("HumanoidRootPart")
+    if not currentRoot or not currentRoot.Parent then
+        -- warn("BulletCasingSystem (Glock): Player HumanoidRootPart not found. Casing not created.")
+        return
+    end
+    
+    local glockHandle = glockTool:FindFirstChild(s3_CONFIG_GlockTargetPartName)
+    local basePosition
+
+    if glockHandle and glockHandle:IsA("BasePart") then
+        basePosition = glockHandle.CFrame * CFrame.new(0.3, 0.15, 0.1) 
+    else
+        -- warn("BulletCasingSystem (Glock): Handle '" .. s3_CONFIG_GlockTargetPartName .. "' not found. Using HRP for casing spawn position.")
+        basePosition = currentRoot.CFrame * CFrame.new(1, 0.5, 0) 
+    end
+
+    local directionSpread = 0.2
+    local upwardDirectionSpread = 0.15
+    
+    local baseEjectionVector = currentRoot.CFrame.RightVector 
+    local randomDirectionOffset = Vector3.new(
+        (math.random() - 0.5) * 2 * directionSpread,
+        (math.random() - 0.5) * 2 * directionSpread,
+        (math.random() - 0.5) * 2 * directionSpread
+    )
+    local desiredEjectionDirection = (baseEjectionVector + randomDirectionOffset).Unit
+    local baseCFrame = CFrame.lookAt(basePosition.Position, basePosition.Position + desiredEjectionDirection)
+
+    local part = Instance.new("Part")
+    part.Size = Vector3.new(0.2, 0.2, 0.2)
+    part.CFrame = baseCFrame
+    part.Anchored = false
+    part.CanCollide = true
+    part.Color = Color3.fromRGB(146, 90, 6)
+    part.Name = "bala_casing_glock" 
+    part.Transparency = 0
+    part.Material = Enum.Material.Metal
+    part.Shape = Enum.PartType.Block
+    part.Elasticity = 0.7
+
+    pcall(function() PhysicsService:SetPartCollisionGroup(part, bulletCollisionGroupName) end)
+    part.Parent = container
+
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshId = "rbxassetid://12402615783" 
+    mesh.Scale = Vector3.new(0.12, 0.12, 0.12)
+    mesh.Parent = part
+
+    local sound = Instance.new("Sound")
+    sound.SoundId = bulletSoundIds[math.random(#bulletSoundIds)]
+    sound.Volume = 1.6; sound.Parent = part
+    sound:Play()
+    sound.Ended:Connect(function() sound:Destroy() end)
+
+    local baseSideSpeed = 25; local sideSpeedVariation = 5
+    local ejectionSideSpeed = baseSideSpeed + (math.random() * 2 - 1) * sideSpeedVariation
+    local baseUpwardForce = 20; local upwardForceVariation = 5
+    local ejectionUpwardForce = baseUpwardForce + (math.random() * 2 - 1) * upwardForceVariation
+    local maxSpinMagnitude = 15
+
+    local sideVelocityComponent = desiredEjectionDirection * ejectionSideSpeed
+    local globalUpVector = Vector3.new(0, 1, 0) 
+    local randomUpwardOffset = Vector3.new((math.random() - 0.5) * 2 * upwardDirectionSpread, 0, (math.random() - 0.5) * 2 * upwardDirectionSpread)
+    local finalUpwardKickDirection = (globalUpVector + randomUpwardOffset).Unit
+    local upwardVelocityComponent = finalUpwardKickDirection * ejectionUpwardForce
+    
+    part.AssemblyLinearVelocity = sideVelocityComponent + upwardVelocityComponent
+    part.AssemblyAngularVelocity = Vector3.new((math.random()*2-1)*maxSpinMagnitude, (math.random()*2-1)*maxSpinMagnitude, (math.random()*2-1)*maxSpinMagnitude)
+    
+    task.delay(5, function() if part and part.Parent then part:Destroy() end end)
+end
+
+local function crearBalaM4()
+    local container = ensureBulletCasingContainer()
+    if not container then 
+        -- warn("BulletCasingSystem (M4): Casing container not found/ensured.")
+        return 
+    end
+
+    local currentCharacterForBullet = localPlayer.Character
+    if not currentCharacterForBullet then
+        -- warn("BulletCasingSystem (M4): Player character not found for bullet creation.")
+        return
+    end
+
+    local m4Tool = currentCharacterForBullet:FindFirstChild(s2_CONFIG_M4ToolName)
+    if not (m4Tool and m4Tool:IsA("Tool")) then
+        return
+    end
+    
+    local currentRoot = currentCharacterForBullet:FindFirstChild("HumanoidRootPart")
+    if not currentRoot or not currentRoot.Parent then
+        -- warn("BulletCasingSystem (M4): Player HumanoidRootPart not found. Casing not created.")
+        return
+    end
+    
+    local m4Handle = m4Tool:FindFirstChild(s2_CONFIG_M4TargetPartName)
+    local basePosition
+
+    if m4Handle and m4Handle:IsA("BasePart") then
+        basePosition = m4Handle.CFrame * CFrame.new(0.3, 0.15, 0.1) 
+    else
+        -- warn("BulletCasingSystem (M4): Handle '" .. s2_CONFIG_M4TargetPartName .. "' not found. Using HRP for casing spawn position.")
+        basePosition = currentRoot.CFrame * CFrame.new(1, 0.5, 0) 
+    end
+
+    local directionSpread = 0.2
+    local upwardDirectionSpread = 0.15
+    
+    local baseEjectionVector = currentRoot.CFrame.RightVector 
+    local randomDirectionOffset = Vector3.new(
+        (math.random() - 0.5) * 2 * directionSpread,
+        (math.random() - 0.5) * 2 * directionSpread,
+        (math.random() - 0.5) * 2 * directionSpread
+    )
+    local desiredEjectionDirection = (baseEjectionVector + randomDirectionOffset).Unit
+    local baseCFrame = CFrame.lookAt(basePosition.Position, basePosition.Position + desiredEjectionDirection)
+
+    local part = Instance.new("Part")
+    part.Size = Vector3.new(0.2, 0.2, 0.2)
+    part.CFrame = baseCFrame
+    part.Anchored = false
+    part.CanCollide = true
+    part.Color = Color3.fromRGB(130, 80, 10)
+    part.Name = "bala_casing_m4" 
+    part.Transparency = 0
+    part.Material = Enum.Material.Metal
+    part.Shape = Enum.PartType.Block
+    part.Elasticity = 0.7
+
+    pcall(function() PhysicsService:SetPartCollisionGroup(part, bulletCollisionGroupName) end)
+    part.Parent = container
+
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshId = "rbxassetid://1612902750" 
+    mesh.Scale = Vector3.new(0.18, 0.18, 0.18)
+    mesh.Parent = part
+
+    local sound = Instance.new("Sound")
+    sound.SoundId = bulletSoundIds[math.random(#bulletSoundIds)]
+    sound.Volume = 1.6; sound.Parent = part
+    sound:Play()
+    sound.Ended:Connect(function() sound:Destroy() end)
+
+    local baseSideSpeed = 25; local sideSpeedVariation = 5
+    local ejectionSideSpeed = baseSideSpeed + (math.random() * 2 - 1) * sideSpeedVariation
+    local baseUpwardForce = 20; local upwardForceVariation = 5
+    local ejectionUpwardForce = baseUpwardForce + (math.random() * 2 - 1) * upwardForceVariation
+    local maxSpinMagnitude = 15
+
+    local sideVelocityComponent = desiredEjectionDirection * ejectionSideSpeed
+    local globalUpVector = Vector3.new(0, 1, 0) 
+    local randomUpwardOffset = Vector3.new((math.random() - 0.5) * 2 * upwardDirectionSpread, 0, (math.random() - 0.5) * 2 * upwardDirectionSpread)
+    local finalUpwardKickDirection = (globalUpVector + randomUpwardOffset).Unit
+    local upwardVelocityComponent = finalUpwardKickDirection * ejectionUpwardForce
+    
+    part.AssemblyLinearVelocity = sideVelocityComponent + upwardVelocityComponent
+    part.AssemblyAngularVelocity = Vector3.new((math.random()*2-1)*maxSpinMagnitude, (math.random()*2-1)*maxSpinMagnitude, (math.random()*2-1)*maxSpinMagnitude)
+    
+    task.delay(5, function() if part and part.Parent then part:Destroy() end end)
+end
+
+--============================================================================
+-- AUDIO MODIFICATIONS
+--============================================================================
+task.spawn(function()
+    local audioFolder = ReplicatedStorage:WaitForChild("cf8d8025-e21e-4f2c-af4d-9a6dab2dcb98", 10)
+    if not audioFolder then
+        -- warn("AudioMod: Main audio folder 'cf8d8025-e21e-4f2c-af4d-9a6dab2dcb98' not found.")
+        return
+    end
+
+    local commonSound_guid = "bc992515-36b1-405e-a9e2-3343b2c73a0a"
+    local commonSoundInstance = audioFolder:WaitForChild(commonSound_guid, 5)
+    if commonSoundInstance and commonSoundInstance:IsA("Sound") then
+        commonSoundInstance.SoundId = "rbxassetid://4537247786"
+        
+        commonSoundInstance.Ended:Connect(function()
+            local sequentialSound = Instance.new("Sound")
+            sequentialSound.Name = "SequentialAfterCommonSound"
+            sequentialSound.SoundId = "rbxassetid://2712533735"
+            sequentialSound.Parent = SoundService
+            sequentialSound:Play()
+            sequentialSound.Ended:Connect(function()
+                if sequentialSound and sequentialSound.Parent then sequentialSound:Destroy() end
+            end)
+        end)
+    else
+        -- warn("AudioMod: Common sound instance " .. commonSound_guid .. " not found or not a Sound.")
+    end
+
+    if s1_CONFIG_PermanentWeaponMeshesEnabled then
+        local s1_sound1_guid = "TODAVIA NO EXISTE" 
+        local s1_sound1 = audioFolder:WaitForChild(s1_sound1_guid, 5)
+        if s1_sound1 and s1_sound1:IsA("Sound") then
+            s1_sound1.SoundId = "rbxassetid://3748780866"
+        else
+            -- warn("S1 Audio: Sound " .. s1_sound1_guid .. " (a5fe3...) not found or not a Sound.")
+        end
+    end
+
+    if s3_CONFIG_GlockEnabled then
+        local s3_sound1_guid = "8237baf4-5de6-406a-84a3-d2664fc7f222" 
+        local s3_sound1 = audioFolder:WaitForChild(s3_sound1_guid, 5)
+        if s3_sound1 and s3_sound1:IsA("Sound") then
+            s3_sound1.SoundId = "rbxassetid://4817809188"
+            s3_sound1.Ended:Connect(function()
+                local sequentialSound = Instance.new("Sound")
+                sequentialSound.Name = "S3_SequentialAfter4817809188" 
+                sequentialSound.SoundId = "rbxassetid://2712533735"
+                sequentialSound.Parent = SoundService
+                sequentialSound:Play()
+                sequentialSound.Ended:Connect(function()
+                    if sequentialSound and sequentialSound.Parent then sequentialSound:Destroy() end
+                end)
+            end)
+        else
+            -- warn("S3 Audio: Sound " .. s3_sound1_guid .. " (6bbe5...) not found or not a Sound.")
+        end
+
+        local s3_new_sounds_config = {
+            {guid = "b2032bba-ac0f-46ff-b608-857097511b81", soundId = "rbxassetid://1498950813", volume = 2.5},
+            {guid = "286984b1-d3cf-4795-9f4b-dc86b394dca5", soundId = "rbxassetid://88928897736985", volume = 2.5}, 
+            {guid = "c855fe11-32a5-4c0e-b5b9-6ad0d32215a7", soundId = "rbxassetid://108215829949023", volume = 2.5} 
+        }
+        for _, config in ipairs(s3_new_sounds_config) do
+            local soundInstance = audioFolder:WaitForChild(config.guid, 5)
+            if soundInstance and soundInstance:IsA("Sound") then
+                soundInstance.SoundId = config.soundId
+                soundInstance.Volume = config.volume
+            else
+                -- warn("S3 New Audio (" .. config.guid .. ") not found or not a Sound instance.")
+            end
+        end
+    end
+
+    local standalone_sound_guid = "d3b80192-af49-4ea0-9f24-f87daaec400b"
+    local standaloneSoundInstance = audioFolder:WaitForChild(standalone_sound_guid, 5)
+    if standaloneSoundInstance and standaloneSoundInstance:IsA("Sound") then
+        standaloneSoundInstance.SoundId = "rbxassetid://6216483552"
+    else
+        -- warn("AudioMod: Sound instance " .. standalone_sound_guid .. " (8d075...) not found or not a Sound.")
+    end
+end)
+
+--============================================================================
+-- HELPER FUNCTIONS (Originals)
+--============================================================================
+local function s1_createOriginalMeshBlock(character)
+    if not character then return end
+    local anchorPart
+    local preferredPartNames = {"UpperTorso", "HumanoidRootPart", "LowerTorso", "Torso"}
+    for _, name in ipairs(preferredPartNames) do
+        local foundPart = character:FindFirstChild(name)
+        if foundPart and foundPart:IsA("BasePart") then anchorPart = foundPart; break end
+    end
+    if not anchorPart then return end
+
+    local existingBlock = character:FindFirstChild("MeshBlock")
+    if existingBlock then existingBlock:Destroy() end
+    local existingMotor = anchorPart:FindFirstChild("MeshMotor6D_Pasted")
+    if existingMotor then existingMotor:Destroy() end
+
+    local meshPart = Instance.new("Part")
+    meshPart.Name = "MeshBlock"; meshPart.Size = Vector3.new(1,1,1); meshPart.Anchored = false
+    meshPart.CanCollide = false; meshPart.CanTouch = false; meshPart.CanQuery = false
+    meshPart.Transparency = 0; meshPart.Parent = character
+    local motor = Instance.new("Motor6D")
+    motor.Name = "MeshMotor6D_Pasted"; motor.Part0 = anchorPart; motor.Part1 = meshPart
+    motor.C0 = CFrame.new(0.069, -0.208, 0.000) * CFrame.Angles(math.rad(0), math.rad(0), math.rad(0))
+    motor.C1 = CFrame.new(0,0,0); motor.Parent = anchorPart
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType = Enum.MeshType.FileMesh; mesh.MeshId = "rbxassetid://2998641111"
+    mesh.Scale = Vector3.new(1.028, 1.028, 1.028); mesh.VertexColor = Vector3.new(0.718, 0.718, 0.718)
+    mesh.TextureId = "rbxassetid://75115365279050"; mesh.Parent = meshPart
+end
+
+local function s1_createUniqueIdMeshBlock(character, uniqueBlockId)
+    if not character then return end
+    if not uniqueBlockId then return end
+    local anchorPart
+    local preferredPartNames = {"UpperTorso", "HumanoidRootPart", "LowerTorso", "Torso"}
+    for _, name in ipairs(preferredPartNames) do
+        local foundPart = character:FindFirstChild(name)
+        if foundPart and foundPart:IsA("BasePart") then anchorPart = foundPart; break end
+    end
+    if not anchorPart then return end
+    local meshPartNamePattern = "MeshBlock_%s"; local motorNamePattern = "MeshMotor6D_%s"
+    local actualMeshPartName = string.format(meshPartNamePattern, uniqueBlockId)
+    local actualMotorName = string.format(motorNamePattern, uniqueBlockId)
+    local existingBlock = character:FindFirstChild(actualMeshPartName)
+    if existingBlock then existingBlock:Destroy() end
+    local existingMotor = anchorPart:FindFirstChild(actualMotorName)
+    if existingMotor then existingMotor:Destroy() end
+    local meshPart = Instance.new("Part")
+    meshPart.Name = actualMeshPartName; meshPart.Size = Vector3.new(1,1,1); meshPart.Anchored = false
+    meshPart.CanCollide = false; meshPart.CanTouch = false; meshPart.CanQuery = false
+    meshPart.Transparency = 0; meshPart.Parent = character
+    local motor = Instance.new("Motor6D")
+    motor.Name = actualMotorName; motor.Part0 = anchorPart; motor.Part1 = meshPart
+    motor.C0 = CFrame.new(0.069, 0.556, -0.694) * CFrame.Angles(math.rad(7.500), math.rad(3.750), math.rad(-80.000))
+    motor.C1 = CFrame.new(0,0,0); motor.Parent = anchorPart
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType = Enum.MeshType.FileMesh; mesh.MeshId = "rbxassetid://15376542244"
+    mesh.Scale = Vector3.new(1.000, 1.000, 1.000); mesh.VertexColor = Vector3.new(0.784, 0.784, 0.784)
+    mesh.TextureId = "rbxassetid://75115365279050"; mesh.Parent = meshPart
+end
+
+local function s1_createFakeAccessoryPart(attachmentPart, meshConfig, namePrefix)
+    local fakePart = Instance.new("Part")
+    fakePart.Name = namePrefix .. meshConfig.id
+    fakePart.Anchored = false; fakePart.CanCollide = false
+    fakePart.Size = Vector3.new(0.1, 0.1, 0.1); fakePart.Color = meshConfig.color
+    fakePart.Material = Enum.Material.SmoothPlastic; fakePart.Transparency = 0
+    fakePart.CFrame = attachmentPart.CFrame * meshConfig.offset
+    fakePart.Parent = attachmentPart.Parent
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType = Enum.MeshType.FileMesh; mesh.MeshId = "rbxassetid://" .. meshConfig.id
+    mesh.Scale = meshConfig.scale
+    if meshConfig.textureId and meshConfig.textureId ~= "" then
+        mesh.TextureId = "rbxassetid://" .. meshConfig.textureId
+    end
+    mesh.Parent = fakePart
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = fakePart; weld.Part1 = attachmentPart; weld.Parent = fakePart
+    return fakePart
+end
+
+local function s2_createFakeM4ToolPart(initialCFrame, meshConfig, namePrefix)
+    local fakePart = Instance.new("Part")
+    fakePart.Anchored = true; fakePart.CanCollide = false
+    fakePart.Size = Vector3.new(1, 1, 1); fakePart.Color = meshConfig.color
+    fakePart.Material = Enum.Material.SmoothPlastic; fakePart.Transparency = 0
+    fakePart.CFrame = initialCFrame; fakePart.Name = namePrefix .. meshConfig.meshId
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType = Enum.MeshType.FileMesh; mesh.MeshId = "rbxassetid://" .. meshConfig.meshId
+    if meshConfig.textureId and meshConfig.textureId ~= "" and meshConfig.textureId ~= "YOUR_TEXTURE_ID" then
+        mesh.TextureId = "rbxassetid://" .. meshConfig.textureId
+    end
+    mesh.Scale = meshConfig.scale; mesh.Parent = fakePart
+    return fakePart
+end
+
+local function s3_createFakeGlockToolPart(attachmentPart, meshConfig, namePrefix)
+    local fakePart = Instance.new("Part")
+    fakePart.Name = namePrefix .. meshConfig.id
+    fakePart.Anchored = false; fakePart.CanCollide = false
+    fakePart.Size = Vector3.new(0.1, 0.1, 0.1); fakePart.Color = meshConfig.color
+    fakePart.Material = Enum.Material.SmoothPlastic
+    if meshConfig.isSilencer then fakePart.Transparency = meshConfig.visible and 0 or 1
+    else fakePart.Transparency = 0 end
+    local baseRotation = CFrame.Angles(0, math.rad(268), 0)
+    fakePart.CFrame = attachmentPart.CFrame * baseRotation * meshConfig.offset
+    fakePart.Parent = attachmentPart.Parent
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType = Enum.MeshType.FileMesh; mesh.MeshId = "rbxassetid://" .. meshConfig.id
+    mesh.Scale = meshConfig.scale; mesh.Parent = fakePart
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = fakePart; weld.Part1 = attachmentPart; weld.Parent = fakePart
+    return fakePart
+end
+
+local function destroyPartsInTable(partsTable)
+    for key, partOrData in pairs(partsTable) do
+        local partInstance = partOrData
+        if type(partOrData) == "table" and partOrData.part then 
+            partInstance = partOrData.part
+        elseif type(partOrData) == "table" and partOrData.meshPart then 
+             partInstance = partOrData.meshPart
+        end
+
+        if partInstance and partInstance:IsA("Instance") and partInstance.Parent then
+            partInstance:Destroy()
+        end
+        if type(partOrData) == "table" and partOrData.motor and partOrData.motor:IsA("Instance") and partOrData.motor.Parent then 
+            partOrData.motor:Destroy()
+        end
+    end
+    return {}
+end
+
+local s4_updateNeonLightState, s4_setPartsVisibility, s4_handleSeatOrCharacterChange -- Forward declare
+
+local function s4_createMeshBlock(character, anchorPartName, config)
+    local anchorPartToUse
+    local foundPart = character:FindFirstChild(anchorPartName)
+    if foundPart and foundPart:IsA("BasePart") then
+        anchorPartToUse = foundPart
+    end
+    if not anchorPartToUse then
+        -- warn("S4 MeshBlock Error: Could not find anchor part '" .. anchorPartName .. "' in character: " .. character.Name)
+        return nil
+    end
+    local meshPartNamePattern = "S4_MeshBlock_%s"; local motorNamePattern = "S4_MeshMotor6D_%s"
+    local actualMeshPartName = string.format(meshPartNamePattern, config.id)
+    local actualMotorName = string.format(motorNamePattern, config.id)
+    local existingBlock = character:FindFirstChild(actualMeshPartName)
+    if existingBlock then existingBlock:Destroy() end
+    local existingMotor = anchorPartToUse:FindFirstChild(actualMotorName)
+    if existingMotor then existingMotor:Destroy() end
+    local meshPart = Instance.new("Part")
+    meshPart.Name = actualMeshPartName; meshPart.Size = Vector3.new(1, 1, 1); meshPart.Anchored = false
+    meshPart.CanCollide = false; meshPart.CanTouch = false; meshPart.CanQuery = false
+    meshPart.Transparency = config.transparency or 0; meshPart.Parent = character
+    local motor = Instance.new("Motor6D")
+    motor.Name = actualMotorName; motor.Part0 = anchorPartToUse; motor.Part1 = meshPart
+    motor.C0 = config.c0; motor.C1 = config.c1 or CFrame.new(0, 0, 0); motor.Parent = anchorPartToUse
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType = Enum.MeshType.FileMesh; mesh.MeshId = config.meshId
+    mesh.Scale = config.scale; mesh.VertexColor = config.vertexColor
+    mesh.TextureId = config.textureId; mesh.Parent = meshPart
+    table.insert(s4_allCreatedMeshParts, {part = meshPart, originalTransparency = config.transparency or 0})
+    return meshPart
+end
+
+local function s5_createLimbMeshBlock(character, config)
+    local anchorPart
+    for _, name in ipairs(config.preferredPartNames) do
+        local foundPart = character:FindFirstChild(name)
+        if foundPart and foundPart:IsA("BasePart") then anchorPart = foundPart; break end
+    end
+    if not anchorPart then
+        -- warn("S5 MeshBlock Error: Could not find anchor part for ID " .. config.uniqueBlockId .. ". Searched for: " .. table.concat(config.preferredPartNames, ", "))
+        return nil, nil
+    end
+    local actualMeshPartName = string.format(s5_meshPartNamePattern, config.uniqueBlockId)
+    local actualMotorName = string.format(s5_motorNamePattern, config.uniqueBlockId)
+    local existingBlock = character:FindFirstChild(actualMeshPartName)
+    if existingBlock then existingBlock:Destroy() end
+    local existingMotor = anchorPart:FindFirstChild(actualMotorName)
+    if existingMotor then existingMotor:Destroy() end
+    local meshPart = Instance.new("Part")
+    meshPart.Name = actualMeshPartName; meshPart.Size = Vector3.new(1, 1, 1); meshPart.Anchored = false
+    meshPart.CanCollide = false; meshPart.CanTouch = false; meshPart.CanQuery = false
+    meshPart.Transparency = config.transparency or 0; meshPart.Parent = character
+    local motor = Instance.new("Motor6D")
+    motor.Name = actualMotorName; motor.Part0 = anchorPart; motor.Part1 = meshPart
+    motor.C0 = config.motorC0; motor.C1 = config.motorC1 or CFrame.new(0, 0, 0); motor.Parent = anchorPart
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType = Enum.MeshType.FileMesh; mesh.MeshId = config.meshId
+    mesh.Scale = config.meshScale; mesh.VertexColor = config.vertexColor or Vector3.new(0.816, 0.847, 0.878)
+    mesh.TextureId = config.textureId or "rbxassetid://16845056166"; mesh.Parent = meshPart
+    return meshPart, motor
+end
+
+--============================================================================
+-- HELPER FUNCTIONS (New Additions)
+--============================================================================
+local function applyCharacterModifications(character)
+    if not character or not character.Parent then
+        return
+    end
+    for _, itemName in ipairs(charMod_itemsARemover) do
+        local item = character:FindFirstChild(itemName)
+        if item then
+            item:Destroy()
+        end
+    end
+    local bodyColors = character:WaitForChild("Body Colors", 5) 
+    if bodyColors and bodyColors:IsA("BodyColors") then
+        bodyColors.HeadColor3 = Color3.fromRGB(107, 107, 108)
+        bodyColors.TorsoColor3 = Color3.fromRGB(107, 107, 108)
+        bodyColors.LeftArmColor3 = Color3.fromRGB(107, 107, 108)
+        bodyColors.RightArmColor3 = Color3.fromRGB(107, 107, 108)
+        bodyColors.LeftLegColor3 = Color3.fromRGB(107, 107, 108)
+        bodyColors.RightLegColor3 = Color3.fromRGB(107, 107, 108)
+    else
+        -- Body Colors object not found or not correct type
+    end
+end
+
+local function updateHeadAccessoryNeonVisuals()
+    if headAccessory_createdParts.neonPart and headAccessory_createdParts.neonPart.Parent then
+        local targetNeonColor
+        local targetLightColor
+        local previousStateIsRed = headAccessory_createdParts.neonPart.Color == Color3.fromRGB(255,0,0)
+
+        if headAccessoryIsRedDueToBetaLock then
+            targetNeonColor = Color3.fromRGB(255, 0, 0)
+            targetLightColor = Color3.fromRGB(255, 0, 0) 
+            if not previousStateIsRed then 
+                local sound = Instance.new("Sound")
+                sound.SoundId = BIMBOLOCK_NEON_CHANGE_SOUND_ID
+                sound.Parent = SoundService
+                sound:Play()
+                sound.Ended:Connect(function() sound:Destroy() end)
+            end
+        else
+            targetNeonColor = originalHeadAccessoryNeonColor
+            targetLightColor = originalHeadAccessoryLightColor
+        end
+
+        headAccessory_createdParts.neonPart.Color = targetNeonColor
+        if headAccessory_createdParts.pointLight then
+            headAccessory_createdParts.pointLight.Color = targetLightColor
+        end
+    end
+end
+
+local function createHeadAccessoryAndNeon(character)
+    if not character then return end
+    local anchorPart
+    local preferredPartNames = {"Head"}
+    for _, name in ipairs(preferredPartNames) do
+        local foundPart = character:FindFirstChild(name)
+        if foundPart and foundPart:IsA("BasePart") then anchorPart = foundPart; break end
+    end
+    if not anchorPart then return end
+
+    local meshPartName = "MeshBlock_" .. headAccessory_uniqueBlockId
+    local motorName = "MeshMotor6D_" .. headAccessory_uniqueBlockId
+
+    if character:FindFirstChild(meshPartName) then character[meshPartName]:Destroy() end
+    if anchorPart:FindFirstChild(motorName) then anchorPart[motorName]:Destroy() end
+
+    local meshPart = Instance.new("Part")
+    meshPart.Name = meshPartName
+    meshPart.Size = Vector3.new(1,1,1); meshPart.Anchored = false; meshPart.CanCollide = false; meshPart.CanTouch = false; meshPart.CanQuery = false; meshPart.Transparency = 0
+    meshPart.Parent = character
+
+    local motor = Instance.new("Motor6D")
+    motor.Name = motorName
+    motor.Part0 = anchorPart; motor.Part1 = meshPart
+    motor.C0 = headAccessory_meshBlockC0
+    motor.C1 = CFrame.new(0,0,0)
+    motor.Parent = anchorPart
+
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType = Enum.MeshType.FileMesh
+    mesh.MeshId = headAccessory_meshBlockMeshId
+    mesh.Scale = headAccessory_meshBlockScale
+    mesh.VertexColor = Vector3.new(1.000, 1.000, 1.000)
+    mesh.TextureId = headAccessory_meshBlockTextureId
+    mesh.Parent = meshPart
+    
+    headAccessory_createdParts.meshPart = meshPart
+    headAccessory_createdParts.motor = motor
+
+    local neonPart = Instance.new("Part")
+    neonPart.Name = "NeonLight_HeadAccessory"
+    neonPart.Material = Enum.Material.Neon
+    neonPart.Color = headAccessory_neonConfig.NeonColor 
+    neonPart.Anchored = false
+    neonPart.Size = Vector3.new(headAccessory_neonConfig.Diameter, headAccessory_neonConfig.Thickness, headAccessory_neonConfig.Diameter)
+
+    local pointLight = Instance.new("PointLight")
+    pointLight.Color = headAccessory_neonConfig.LightColor 
+    pointLight.Brightness = headAccessory_neonConfig.GlowIntensity
+    pointLight.Range = 8
+    pointLight.Shadows = false
+    pointLight.Parent = neonPart
+    neonPart:SetAttribute("GlowDirection", headAccessory_neonConfig.GlowDirection)
+
+    local relativeOffset = headAccessory_neonConfig.Offset
+    local relativeRotation = CFrame.Angles(
+        math.rad(headAccessory_neonConfig.RotationDegrees.X),
+        math.rad(headAccessory_neonConfig.RotationDegrees.Y),
+        math.rad(headAccessory_neonConfig.RotationDegrees.Z)
+    )
+    local relativeCFrame = CFrame.new(relativeOffset) * relativeRotation
+    neonPart.CFrame = meshPart.CFrame * relativeCFrame 
+    neonPart.Parent = meshPart 
+
+    local weldConstraint = Instance.new("WeldConstraint")
+    weldConstraint.Part0 = neonPart
+    weldConstraint.Part1 = meshPart
+    weldConstraint.Parent = neonPart
+    
+    headAccessory_createdParts.neonPart = neonPart
+    headAccessory_createdParts.weld = weldConstraint
+    headAccessory_createdParts.pointLight = pointLight
+    
+    updateHeadAccessoryNeonVisuals() 
+end
+
+local function cleanupHeadAccessoryAndNeon()
+    if headAccessory_createdParts.weld and headAccessory_createdParts.weld.Parent then headAccessory_createdParts.weld:Destroy() end
+    if headAccessory_createdParts.neonPart and headAccessory_createdParts.neonPart.Parent then headAccessory_createdParts.neonPart:Destroy() end
+    if headAccessory_createdParts.motor and headAccessory_createdParts.motor.Parent then headAccessory_createdParts.motor:Destroy() end
+    if headAccessory_createdParts.meshPart and headAccessory_createdParts.meshPart.Parent then headAccessory_createdParts.meshPart:Destroy() end
+    headAccessory_createdParts = {}
+end
+
+local function playIntroEffects(characterModel)
+    if initialEffectsPlayed and characterModel == currentCharacter then return end 
+    if not characterModel or not characterModel:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+    initialEffectsPlayed = true 
+
+    local hrp = characterModel:FindFirstChild("HumanoidRootPart")
+    if not hrp then 
+        return 
+    end
+
+    local sound1 = Instance.new("Sound")
+    sound1.Name = "IntroSound1"
+    sound1.SoundId = "rbxassetid://6945759710"
+    sound1.Parent = SoundService 
+    sound1.Volume = 2
+
+    local sound2 = Instance.new("Sound")
+    sound2.Name = "IntroSound2"
+    sound2.SoundId = "rbxassetid://000" 
+    sound2.Parent = SoundService
+    sound2.Volume = 2
+
+    local smoke = Instance.new("Smoke")
+    smoke.Name = "IntroSuitSmoke"
+    smoke.Enabled = true
+    smoke.RiseVelocity = 20
+    smoke.Opacity = 0.5
+    smoke.Size = 5
+    smoke.Color = Color3.fromRGB(40, 40, 40) 
+    smoke.Parent = hrp
+
+    sound1:Play()
+
+    task.spawn(function()
+        local success, err = pcall(function() sound1.Loaded:Wait(5) end)
+        if success and sound1.TimeLength > 0 then
+            task.delay(sound1.TimeLength / 2, function()
+                if sound2 and sound2.Parent then
+                    sound2:Play()
+                end
+            end)
+        else
+            task.delay(1.5, function() 
+                if sound2 and sound2.Parent then
+                    sound2:Play()
+                end
+            end)
+        end
+    end)
+
+    local sound1EndedConnection
+    sound1EndedConnection = sound1.Ended:Connect(function()
+        if sound1EndedConnection then sound1EndedConnection:Disconnect() end
+        if sound1 and sound1.Parent then sound1:Destroy(); sound1 = nil; end
+
+        if smoke and smoke.Parent then
+            local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            local goals = { Opacity = 0, Size = 0.1 } 
+            local smokeTween = TweenService:Create(smoke, tweenInfo, goals)
+            smokeTween:Play()
+            smokeTween.Completed:Connect(function()
+                if smoke and smoke.Parent then smoke:Destroy(); smoke = nil; end
+                if sound2 and sound2.Parent then sound2:Destroy(); sound2 = nil; end
+            end)
+        else
+            if sound2 and sound2.Parent then sound2:Destroy(); sound2 = nil; end
+        end
+    end)
+end
+
+local function setupBimboLockGUIMonitoring()
+    local function processBimboLockGUIPresence(guiInstance) 
+        local previousIsRed = headAccessoryIsRedDueToBetaLock
+
+        if guiInstance and guiInstance:IsA("ScreenGui") then
+            if BimboLockGUIInstance == guiInstance and BimboLockGUIDestroyingConn and BimboLockGUIDestroyingConn.Connected then
+                return 
+            end
+
+            if BimboLockGUIDestroyingConn then
+                BimboLockGUIDestroyingConn:Disconnect()
+                BimboLockGUIDestroyingConn = nil
+            end
+
+            BimboLockGUIInstance = guiInstance
+            headAccessoryIsRedDueToBetaLock = true
+
+            BimboLockGUIDestroyingConn = BimboLockGUIInstance.Destroying:Connect(function()
+                if BimboLockGUIInstance == guiInstance then 
+                    headAccessoryIsRedDueToBetaLock = false
+                    BimboLockGUIInstance = nil
+                    if BimboLockGUIDestroyingConn then
+                        BimboLockGUIDestroyingConn:Disconnect()
+                        BimboLockGUIDestroyingConn = nil
+                    end
+                    updateHeadAccessoryNeonVisuals()
+                end
+            end)
+        else 
+            if BimboLockGUIDestroyingConn then
+                BimboLockGUIDestroyingConn:Disconnect()
+                BimboLockGUIDestroyingConn = nil
+            end
+            BimboLockGUIInstance = nil
+            headAccessoryIsRedDueToBetaLock = false
+        end
+        updateHeadAccessoryNeonVisuals() 
+    end
+
+    processBimboLockGUIPresence(PlayerGui:FindFirstChild("BimboLockGUI"))
+
+    if playerGuiChildAddedConn_BetaLock then playerGuiChildAddedConn_BetaLock:Disconnect() end
+    playerGuiChildAddedConn_BetaLock = PlayerGui.ChildAdded:Connect(function(child)
+        if child.Name == "BimboLockGUI" and child:IsA("ScreenGui") then
+            processBimboLockGUIPresence(child)
+        end
+    end)
+
+    if playerGuiChildRemovedConn_BetaLock then playerGuiChildRemovedConn_BetaLock:Disconnect() end
+    playerGuiChildRemovedConn_BetaLock = PlayerGui.ChildRemoved:Connect(function(child)
+        if child == BimboLockGUIInstance then 
+            processBimboLockGUIPresence(nil) 
+        end
+    end)
+end
+
+--============================================================================
+-- CORE LOGIC SETUP FUNCTIONS (Script 1 Base)
+--============================================================================
+local function s1_initializeAndSetupPermanentCharacterAttachments(character)
+    if not s1_CONFIG_PermanentWeaponMeshesEnabled then return end
+    if not character then
+        s1_fakeAccessoryParts = destroyPartsInTable(s1_fakeAccessoryParts)
+        s1_targetAttachmentPart = nil
+        return
+    end
+    local anchorPartForWeapon
+    local preferredPartNames = {"UpperTorso", "HumanoidRootPart", "LowerTorso", "Torso"}
+    for _, name in ipairs(preferredPartNames) do
+        local foundPart = character:FindFirstChild(name)
+        if foundPart and foundPart:IsA("BasePart") then anchorPartForWeapon = foundPart; break end
+    end
+    if anchorPartForWeapon then
+        s1_targetAttachmentPart = anchorPartForWeapon
+        s1_fakeAccessoryParts = destroyPartsInTable(s1_fakeAccessoryParts)
+        local tempFakeParts = {}
+        for _, meshConfig in ipairs(permanentWeapon_customMeshes) do
+            local fakePart = s1_createFakeAccessoryPart(s1_targetAttachmentPart, meshConfig, "S1_PermWeapon_")
+            tempFakeParts[meshConfig.id] = fakePart
+        end
+        s1_fakeAccessoryParts = tempFakeParts
+    else
+        s1_fakeAccessoryParts = destroyPartsInTable(s1_fakeAccessoryParts)
+        s1_targetAttachmentPart = nil
+    end
+end
+
+local function s2_applyModificationsToM4Tool(tool)
+    if not s2_CONFIG_M4Enabled or not tool or tool.Name ~= s2_CONFIG_M4ToolName then return end
+    
+    s2_fakeToolParts = destroyPartsInTable(s2_fakeToolParts)
+    s2_currentM4Tool = tool
+
+    if s2_m4MagSizeAttributeConnection then
+        s2_m4MagSizeAttributeConnection:Disconnect()
+        s2_m4MagSizeAttributeConnection = nil
+    end
+    s2_m4LastMagSize = nil 
+
+    tool:SetAttribute("Instability", 0)
+    tool:SetAttribute("CrosshairSize", 0)
+    tool:SetAttribute("AimFieldOfView", 70) 
+    tool:SetAttribute("Recoil", 0)
+
+    local m4AttachmentPart = tool:FindFirstChild(s2_CONFIG_M4TargetPartName)
+    if not (m4AttachmentPart and m4AttachmentPart:IsA("BasePart")) then
+        s2_currentM4Tool = nil; return
+    end
+    m4AttachmentPart.Transparency = 1
+    if s2_CONFIG_M4MeshSourcePartName and s2_CONFIG_M4MeshSourcePartName ~= "" then
+        local meshSourcePart = tool:FindFirstChild(s2_CONFIG_M4MeshSourcePartName)
+        if meshSourcePart and meshSourcePart:IsA("BasePart") and meshSourcePart ~= m4AttachmentPart then
+            meshSourcePart.Transparency = 1
+        end
+    end
+    for _, name in ipairs(m4_partsToDeleteNames) do
+        local partToDelete = tool:FindFirstChild(name)
+        if partToDelete then partToDelete:Destroy() end
+    end
+    local tempFakeParts = {}
+    for _, meshConfig in ipairs(m4_customMeshes) do
+        local fakePart = s2_createFakeM4ToolPart(CFrame.new(), meshConfig, "S2_FakeM4_")
+        fakePart.Parent = workspace
+        tempFakeParts[meshConfig.meshId] = fakePart
+    end
+    s2_fakeToolParts = tempFakeParts
+
+    local initialMagSize = tool:GetAttribute("MagCurrentSize")
+    if typeof(initialMagSize) == "number" then
+        s2_m4LastMagSize = initialMagSize
+    else
+        -- M4 MagCurrentSize attribute not found or not a number on equip
+    end
+
+    s2_m4MagSizeAttributeConnection = tool:GetAttributeChangedSignal("MagCurrentSize"):Connect(function()
+        if not s2_currentM4Tool or s2_currentM4Tool ~= tool then 
+            if s2_m4MagSizeAttributeConnection then
+                s2_m4MagSizeAttributeConnection:Disconnect()
+                s2_m4MagSizeAttributeConnection = nil
+            end
+            return
+        end
+
+        local newMagSize = tool:GetAttribute("MagCurrentSize")
+        if typeof(newMagSize) == "number" and typeof(s2_m4LastMagSize) == "number" then
+            if newMagSize < s2_m4LastMagSize then
+                crearBalaM4() 
+            end
+        end
+        s2_m4LastMagSize = newMagSize 
+    end)
+end
+
+local function s3_applyModificationsToGlockTool(tool)
+    if not s3_CONFIG_GlockEnabled or not tool or tool.Name ~= s3_CONFIG_GlockToolName then return end
+    s3_fakeToolParts = destroyPartsInTable(s3_fakeToolParts)
+    s3_currentGlockTool = tool
+    tool:SetAttribute("Instability", 0); tool:SetAttribute("CrosshairSize", 0)
+    tool:SetAttribute("AimFieldOfView", 70); tool:SetAttribute("Recoil", 0)
+    local glockAttachmentPart = tool:FindFirstChild(s3_CONFIG_GlockTargetPartName)
+    if not (glockAttachmentPart and glockAttachmentPart:IsA("BasePart")) then
+        s3_currentGlockTool = nil; return
+    end
+    glockAttachmentPart.Transparency = 1
+    local meshSourcePart = tool:FindFirstChild(s3_CONFIG_GlockMeshSourcePartName)
+    if meshSourcePart and meshSourcePart:IsA("BasePart") and meshSourcePart ~= glockAttachmentPart then
+        meshSourcePart.Transparency = 1
+    end
+    for _, name in ipairs(glock_partsToDeleteNames) do
+        local partToDelete = tool:FindFirstChild(name)
+        if partToDelete then partToDelete:Destroy() end
+    end
+    local tempFakeParts = {}
+    for _, meshConfig in ipairs(glock_customMeshes) do
+        local fakePart = s3_createFakeGlockToolPart(glockAttachmentPart, meshConfig, "S3_FakeGlock_")
+        tempFakeParts[meshConfig.id] = fakePart
+    end
+    s3_fakeToolParts = tempFakeParts
+end
+
+--============================================================================
+-- S4 CORE LOGIC (Neon/Seat Visibility)
+--============================================================================
+local function s4_checkVehiclesFolder()
+    local vehiclesFolder = workspace:FindFirstChild("Vehicles")
+    if not vehiclesFolder then
+        -- Optional folder 'Vehicles' not found.
+    end
+end
+
+s4_updateNeonLightState = function()
+    if s4_toggleButton_Neon then
+        s4_toggleButton_Neon.Text = s4_isLightOn_Neon and "Apagar luz" or "Encender luz"
+    end
+    if s4_circlePart_Neon_Instance then
+        local meshesShouldBeGenerallyVisible = not s4_areMeshesHiddenBySeat
+        if meshesShouldBeGenerallyVisible and s4_isLightOn_Neon then
+            s4_circlePart_Neon_Instance.Material = s4_originalMaterial_Neon
+        else
+            s4_circlePart_Neon_Instance.Material = s4_offMaterial_Neon
+        end
+    end
+end
+
+s4_setPartsVisibility = function(makePartsActuallyVisible)
+    if s4_circlePart_Neon_Instance then
+        s4_circlePart_Neon_Instance.Transparency = makePartsActuallyVisible and 0 or 1
+        if s4_surfaceLight_Neon_Instance then
+            s4_surfaceLight_Neon_Instance.Enabled = makePartsActuallyVisible and s4_isLightOn_Neon
+        end
+    end
+    for i = #s4_allCreatedMeshParts, 1, -1 do
+        local item = s4_allCreatedMeshParts[i]
+        if item and item.part and item.part.Parent then
+            item.part.Transparency = makePartsActuallyVisible and item.originalTransparency or 1
+        else
+            table.remove(s4_allCreatedMeshParts, i)
+        end
+    end
+end
+
+s4_handleSeatOrCharacterChange = function()
+    local char = localPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local playerIsOnTargetSeatType = false
+    if hum and hum.SeatPart then
+        if hum.SeatPart.Name == s4_TARGET_SEAT_NAME then
+            playerIsOnTargetSeatType = true
+        end
+    end
+    local previousAreMeshesHiddenBySeat = s4_areMeshesHiddenBySeat
+    s4_areMeshesHiddenBySeat = playerIsOnTargetSeatType
+    if s4_areMeshesHiddenBySeat and not previousAreMeshesHiddenBySeat then
+        local sound = Instance.new("Sound")
+        sound.SoundId = s4_HELMET_OFF_SOUND_ID; sound.Parent = SoundService
+        sound:Play(); sound.Ended:Connect(function() sound:Destroy() end)
+        if s4_lightStateToRestore_Neon == nil then s4_lightStateToRestore_Neon = s4_isLightOn_Neon end
+        s4_isLightOn_Neon = false
+    elseif not s4_areMeshesHiddenBySeat and previousAreMeshesHiddenBySeat then
+        if s4_lightStateToRestore_Neon ~= nil then
+            s4_isLightOn_Neon = s4_lightStateToRestore_Neon
+            s4_lightStateToRestore_Neon = nil
+        end
+    end
+    s4_setPartsVisibility(not s4_areMeshesHiddenBySeat)
+    s4_updateNeonLightState()
+end
+
+local function s4_cleanupNeonCharacterPartsAndConnections()
+    if s4_circlePart_Neon_Instance and s4_circlePart_Neon_Instance.Parent then
+        s4_circlePart_Neon_Instance:Destroy()
+    end
+    s4_circlePart_Neon_Instance = nil; s4_surfaceLight_Neon_Instance = nil
+    for _, conn in pairs(s4_neonCharacterConnections) do conn:Disconnect() end
+    table.clear(s4_neonCharacterConnections)
+    if s4_humanoidSeatedConnection then s4_humanoidSeatedConnection:Disconnect(); s4_humanoidSeatedConnection = nil end
+    s4_allCreatedMeshParts = destroyPartsInTable(s4_allCreatedMeshParts)
+    
+    s4_lightStateToRestore_Neon = nil
+    s4_areMeshesHiddenBySeat = false
+    s4_isLightOn_Neon = true 
+end
+
+local function s4_setupCharacterParts(character)
+    if not character then return end
+    s4_cleanupNeonCharacterPartsAndConnections() 
+    local createdMeshPartsMap = {}
+    for _, config in ipairs(s4_meshBlockConfigs) do
+        local meshPart = s4_createMeshBlock(character, config.anchorPartName, config)
+        if meshPart then createdMeshPartsMap[config.id] = meshPart end
+    end
+    local neonTargetMeshBlockId = "A73C06D5"
+    local neonAnchorPartForCircle = createdMeshPartsMap[neonTargetMeshBlockId]
+    if not neonAnchorPartForCircle then
+        -- S4 NeonCircle Error: Target MeshBlock not found.
+    end
+    if not s4_screenGui_Neon or not s4_screenGui_Neon.Parent then
+        s4_screenGui_Neon = PlayerGui:FindFirstChild("NeonControlGui") or Instance.new("ScreenGui")
+        s4_screenGui_Neon.Name = "NeonControlGui"; s4_screenGui_Neon.ResetOnSpawn = false
+        s4_screenGui_Neon.Parent = PlayerGui
+    end
+    if not s4_toggleButton_Neon or not s4_toggleButton_Neon.Parent then
+        s4_toggleButton_Neon = s4_screenGui_Neon:FindFirstChild("ToggleNeonButton") or Instance.new("TextButton")
+        s4_toggleButton_Neon.Name = "ToggleNeonButton"; s4_toggleButton_Neon.Size = UDim2.new(0, 150, 0, 30)
+        s4_toggleButton_Neon.Position = UDim2.new(0.5, -75, 0, 10); s4_toggleButton_Neon.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        s4_toggleButton_Neon.BorderColor3 = Color3.fromRGB(200, 200, 200); s4_toggleButton_Neon.BorderSizePixel = 1
+        s4_toggleButton_Neon.TextColor3 = Color3.fromRGB(255, 255, 255); s4_toggleButton_Neon.Font = Enum.Font.SourceSans
+        s4_toggleButton_Neon.TextSize = 16; s4_toggleButton_Neon.Parent = s4_screenGui_Neon
+        s4_toggleButton_Neon.MouseButton1Click:Connect(function()
+            s4_isLightOn_Neon = not s4_isLightOn_Neon; s4_lightStateToRestore_Neon = nil
+            s4_setPartsVisibility(not s4_areMeshesHiddenBySeat)
+            s4_updateNeonLightState()
+        end)
+    end
+    if neonAnchorPartForCircle then
+        s4_circlePart_Neon_Instance = Instance.new("Part")
+        s4_circlePart_Neon_Instance.Name = "NeonControlCircle"; s4_circlePart_Neon_Instance.Shape = Enum.PartType.Cylinder
+        s4_circlePart_Neon_Instance.Color = Color3.fromRGB(255, 255, 255); s4_circlePart_Neon_Instance.Anchored = false
+        s4_circlePart_Neon_Instance.CanCollide = false; s4_circlePart_Neon_Instance.CanQuery = false; s4_circlePart_Neon_Instance.CanTouch = false
+        local diameter = 0.14; local thickness = 0.2
+        s4_circlePart_Neon_Instance.Size = Vector3.new(diameter, thickness, diameter)
+        local currentRelativeOffset = Vector3.new(-0.186, -0.001, 0.000)
+        s4_circlePart_Neon_Instance.CFrame = neonAnchorPartForCircle.CFrame * CFrame.new(currentRelativeOffset)
+        s4_circlePart_Neon_Instance.Parent = neonAnchorPartForCircle
+        local weld = Instance.new("WeldConstraint"); weld.Part0 = neonAnchorPartForCircle; weld.Part1 = s4_circlePart_Neon_Instance; weld.Parent = s4_circlePart_Neon_Instance
+        s4_surfaceLight_Neon_Instance = Instance.new("SurfaceLight")
+        s4_surfaceLight_Neon_Instance.Color = Color3.fromRGB(255, 255, 255); s4_surfaceLight_Neon_Instance.Brightness = 10
+        s4_surfaceLight_Neon_Instance.Face = Enum.NormalId.Left; s4_surfaceLight_Neon_Instance.Parent = s4_circlePart_Neon_Instance
+        s4_neonCharacterConnections.anchorLost = neonAnchorPartForCircle.AncestryChanged:Connect(function(_, parent)
+            if not parent then s4_cleanupNeonCharacterPartsAndConnections() end
+        end)
+    end
+    local humanoid = character:WaitForChild("Humanoid")
+    if s4_humanoidSeatedConnection then s4_humanoidSeatedConnection:Disconnect() end
+    s4_humanoidSeatedConnection = humanoid.Seated:Connect(function(active, seatPart)
+        s4_handleSeatOrCharacterChange()
+    end)
+    s4_handleSeatOrCharacterChange() 
+end
+
+--============================================================================
+-- S5 CORE LOGIC (Limb Meshes)
+--============================================================================
+local function s5_initializeLimbMeshes(character)
+    if not character then return end
+    s5_limbMeshParts = destroyPartsInTable(s5_limbMeshParts) 
+    local tempLimbParts = {}
+    for _, config in ipairs(s5_meshConfigurations) do
+        local meshPart, motor = s5_createLimbMeshBlock(character, config)
+        if meshPart and motor then
+            table.insert(tempLimbParts, {meshPart = meshPart, motor = motor, uniqueBlockId = config.uniqueBlockId})
+        end
+    end
+    s5_limbMeshParts = tempLimbParts
+end
+
+local function s5_cleanupLimbMeshes()
+    s5_limbMeshParts = destroyPartsInTable(s5_limbMeshParts)
+end
+
+--============================================================================
+-- DECAL BLOCK SYSTEM FUNCTIONS (Player Health)
+--============================================================================
+local function updateDecalBlockVisuals()
+    if not decalBlock_targetPart_instance or not decalBlock_targetPart_instance.Parent then
+        if decalBlock_instance and decalBlock_instance.Parent then decalBlock_instance.Parent = nil end
+        return
+    end
+    if decalBlock_instance and not decalBlock_instance.Parent then
+        decalBlock_instance.Parent = workspace
+    end
+    if not decalBlock_instance then return end
+
+    local posCFrame = CFrame.new(decalBlock_relativePositionOffset)
+    local rotCFrame = CFrame.Angles(
+        math.rad(decalBlock_relativeRotationOffsetDeg.X),
+        math.rad(decalBlock_relativeRotationOffsetDeg.Y),
+        math.rad(decalBlock_relativeRotationOffsetDeg.Z)
+    )
+    decalBlock_instance.CFrame = decalBlock_targetPart_instance.CFrame * posCFrame * rotCFrame
+end
+
+local function updateDecalImageColorBasedOnHealth(humanoid)
+    if not humanoid or not decalBlock_imageLabel_instance then return end
+    local health = humanoid.Health
+    local maxHealth = humanoid.MaxHealth
+    local actualPercentage = (maxHealth > 0) and (health / maxHealth) or 0
+    local displayPercentage
+    if actualPercentage <= decalBlock_minHealthThreshold then
+        displayPercentage = 0
+    else
+        displayPercentage = (actualPercentage - decalBlock_minHealthThreshold) / (1.0 - decalBlock_minHealthThreshold)
+    end
+    displayPercentage = math.clamp(displayPercentage, 0, 1)
+    local r = decalBlock_lowHealthColor.R * (1 - displayPercentage) + decalBlock_defaultImageColor.R * displayPercentage
+    local g = decalBlock_lowHealthColor.G * (1 - displayPercentage) + decalBlock_defaultImageColor.G * displayPercentage
+    local b = decalBlock_lowHealthColor.B * (1 - displayPercentage) + decalBlock_defaultImageColor.B * displayPercentage
+    decalBlock_imageLabel_instance.ImageColor3 = Color3.new(r, g, b)
+end
+
+local function setupDecalBlockHumanoidConnections(humanoid)
+    if decalBlock_healthChangedConnection then decalBlock_healthChangedConnection:Disconnect(); decalBlock_healthChangedConnection = nil end
+    if decalBlock_diedConnection then decalBlock_diedConnection:Disconnect(); decalBlock_diedConnection = nil end
+    if humanoid then
+        updateDecalImageColorBasedOnHealth(humanoid)
+        decalBlock_healthChangedConnection = humanoid.HealthChanged:Connect(function() updateDecalImageColorBasedOnHealth(humanoid) end)
+        decalBlock_diedConnection = humanoid.Died:Connect(function() updateDecalImageColorBasedOnHealth(humanoid) end)
+    else
+        if decalBlock_imageLabel_instance then decalBlock_imageLabel_instance.ImageColor3 = decalBlock_defaultImageColor end
+    end
+end
+
+local function setupDecalBlockTargetDependencies(targetMeshBlock)
+    decalBlock_targetPart_instance = targetMeshBlock
+    if not decalBlock_instance then 
+        decalBlock_instance = Instance.new("Part")
+        decalBlock_instance.Name = "DecalBlock_Managed_PlayerHealth"
+        decalBlock_instance.Anchored = true; decalBlock_instance.CanCollide = false
+        decalBlock_instance.Size = decalBlock_size; decalBlock_instance.Material = Enum.Material.SmoothPlastic
+        local surfaceGui = Instance.new("SurfaceGui", decalBlock_instance)
+        surfaceGui.Face = Enum.NormalId.Front; surfaceGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+        surfaceGui.PixelsPerStud = decalBlock_pixelsPerStud; surfaceGui.LightInfluence = 0
+        decalBlock_imageLabel_instance = Instance.new("ImageLabel", surfaceGui)
+        decalBlock_imageLabel_instance.Image = decalBlock_decalId; decalBlock_imageLabel_instance.Size = UDim2.new(1, 0, 1, 0)
+        decalBlock_imageLabel_instance.BackgroundTransparency = 1; decalBlock_imageLabel_instance.ImageTransparency = decalBlock_imageTransparency
+    end
+    decalBlock_instance.Parent = workspace
+    updateDecalBlockVisuals()
+
+    if decalBlock_targetMeshBlock_AncestryChangedConnection then decalBlock_targetMeshBlock_AncestryChangedConnection:Disconnect() end
+    decalBlock_targetMeshBlock_AncestryChangedConnection = targetMeshBlock.AncestryChanged:Connect(function(_, parent)
+        if not parent then 
+            if decalBlock_instance and decalBlock_instance.Parent then decalBlock_instance.Parent = nil end
+            decalBlock_targetPart_instance = nil
+            setupDecalBlockHumanoidConnections(nil) 
+        end
+    end)
+    local humanoid = nil
+    if targetMeshBlock.Parent and targetMeshBlock.Parent:IsA("Model") then
+        humanoid = targetMeshBlock.Parent:FindFirstChildOfClass("Humanoid")
+    end
+    setupDecalBlockHumanoidConnections(humanoid)
+end
+
+local function initializeDecalBlockSystem()
+    local function findAndSetupTarget()
+        local targetParent = workspace:FindFirstChild(decalBlock_targetParentName) 
+        if not targetParent and localPlayer.Character and localPlayer.Character.Name == decalBlock_targetParentName then
+             targetParent = localPlayer.Character 
+        end
+
+        if targetParent then
+            local targetMeshBlock = targetParent:FindFirstChild(decalBlock_targetMeshBlockName)
+            if targetMeshBlock and targetMeshBlock:IsA("BasePart") then
+                if decalBlock_targetParent_ChildAddedConnection then decalBlock_targetParent_ChildAddedConnection:Disconnect(); decalBlock_targetParent_ChildAddedConnection = nil end
+                setupDecalBlockTargetDependencies(targetMeshBlock)
+                return true 
+            else
+                if decalBlock_targetParent_ChildAddedConnection then decalBlock_targetParent_ChildAddedConnection:Disconnect() end 
+                decalBlock_targetParent_ChildAddedConnection = targetParent.ChildAdded:Connect(function(child)
+                    if child.Name == decalBlock_targetMeshBlockName and child:IsA("BasePart") then
+                        if decalBlock_targetParent_ChildAddedConnection then decalBlock_targetParent_ChildAddedConnection:Disconnect(); decalBlock_targetParent_ChildAddedConnection = nil end
+                        setupDecalBlockTargetDependencies(child)
+                    end
+                end)
+            end
+        else
+             if decalBlock_targetParent_ChildAddedConnection then decalBlock_targetParent_ChildAddedConnection:Disconnect() end 
+            decalBlock_targetParent_ChildAddedConnection = workspace.ChildAdded:Connect(function(child)
+                if child.Name == decalBlock_targetParentName and child == localPlayer.Character then 
+                    if decalBlock_targetParent_ChildAddedConnection then decalBlock_targetParent_ChildAddedConnection:Disconnect(); decalBlock_targetParent_ChildAddedConnection = nil end
+                    findAndSetupTarget() 
+                end
+            end)
+        end
+        return false 
+    end
+
+    findAndSetupTarget() 
+
+    if not decalBlock_heartbeatConnection then
+        decalBlock_heartbeatConnection = RunService.Heartbeat:Connect(updateDecalBlockVisuals)
+    end
+end
+
+local function cleanupDecalBlockSystem()
+    if decalBlock_heartbeatConnection then decalBlock_heartbeatConnection:Disconnect(); decalBlock_heartbeatConnection = nil end
+    if decalBlock_healthChangedConnection then decalBlock_healthChangedConnection:Disconnect(); decalBlock_healthChangedConnection = nil end
+    if decalBlock_diedConnection then decalBlock_diedConnection:Disconnect(); decalBlock_diedConnection = nil end
+    if decalBlock_targetParent_ChildAddedConnection then decalBlock_targetParent_ChildAddedConnection:Disconnect(); decalBlock_targetParent_ChildAddedConnection = nil end
+    if decalBlock_targetMeshBlock_AncestryChangedConnection then decalBlock_targetMeshBlock_AncestryChangedConnection:Disconnect(); decalBlock_targetMeshBlock_AncestryChangedConnection = nil end
+
+    if decalBlock_instance and decalBlock_instance.Parent then decalBlock_instance:Destroy() end
+    decalBlock_instance = nil
+    decalBlock_imageLabel_instance = nil
+    decalBlock_targetPart_instance = nil
+end
+
+--============================================================================
+-- VEHICLE HEALTH DECAL BLOCK SYSTEM FUNCTIONS
+--============================================================================
+local function updateVehicleDecalBlockVisuals()
+    if not vehicleDecal_targetPart_instance or not vehicleDecal_targetPart_instance.Parent then
+        if vehicleDecal_instance and vehicleDecal_instance.Parent then vehicleDecal_instance.Parent = nil end
+        return
+    end
+    if vehicleDecal_instance and not vehicleDecal_instance.Parent then
+        vehicleDecal_instance.Parent = workspace
+    end
+    if not vehicleDecal_instance then return end
+
+    local posCFrame = CFrame.new(vehicleDecal_relativePositionOffset)
+    local rotCFrame = CFrame.Angles(
+        math.rad(vehicleDecal_relativeRotationOffsetDeg.X),
+        math.rad(vehicleDecal_relativeRotationOffsetDeg.Y),
+        math.rad(vehicleDecal_relativeRotationOffsetDeg.Z)
+    )
+    vehicleDecal_instance.CFrame = vehicleDecal_targetPart_instance.CFrame * posCFrame * rotCFrame
+end
+
+local function updateVehicleDecalImageAndColor()
+    if not vehicleDecal_imageLabel_instance or not vehicleDecal_targetVehicle_instance or not vehicleDecal_targetVehicle_instance.Parent then
+        if vehicleDecal_imageLabel_instance then
+            vehicleDecal_imageLabel_instance.Image = "" 
+            vehicleDecal_imageLabel_instance.ImageColor3 = Color3.new(1,1,1) 
+        end
+        return
+    end
+
+    local currentVehicleHealth = vehicleDecal_targetVehicle_instance:GetAttribute("currentHealth")
+    if typeof(currentVehicleHealth) ~= "number" then
+        currentVehicleHealth = vehicleDecal_maxHealth 
+    end
+
+    local healthPercentage = math.clamp(currentVehicleHealth / vehicleDecal_maxHealth, 0, 1)
+
+    if currentVehicleHealth > vehicleDecal_midHealthThreshold then
+        vehicleDecal_imageLabel_instance.Image = vehicleDecal_highHealthDecalId
+    elseif currentVehicleHealth > vehicleDecal_lowHealthThreshold then
+        vehicleDecal_imageLabel_instance.Image = vehicleDecal_midHealthDecalId
+    else
+        vehicleDecal_imageLabel_instance.Image = vehicleDecal_lowHealthDecalId
+    end
+
+    vehicleDecal_imageLabel_instance.ImageColor3 = vehicleDecal_highHealthColor:Lerp(vehicleDecal_lowHealthColor, 1 - healthPercentage)
+end
+
+local function setupVehicleDecalBlockVehicleConnections(vehicleInstance)
+    vehicleDecal_targetVehicle_instance = vehicleInstance
+    
+    if vehicleDecal_vehicleHealthChangedConnection then vehicleDecal_vehicleHealthChangedConnection:Disconnect(); vehicleDecal_vehicleHealthChangedConnection = nil end
+    if vehicleDecal_vehicleAncestryChangedConnection then vehicleDecal_vehicleAncestryChangedConnection:Disconnect(); vehicleDecal_vehicleAncestryChangedConnection = nil end
+
+    if vehicleInstance then
+        vehicleDecal_vehicleHealthChangedConnection = vehicleInstance:GetAttributeChangedSignal("currentHealth"):Connect(updateVehicleDecalImageAndColor)
+        
+        vehicleDecal_vehicleAncestryChangedConnection = vehicleInstance.AncestryChanged:Connect(function(_, parent)
+            if not parent then
+                if vehicleDecal_vehicleHealthChangedConnection then vehicleDecal_vehicleHealthChangedConnection:Disconnect(); vehicleDecal_vehicleHealthChangedConnection = nil end
+                if vehicleDecal_vehicleAncestryChangedConnection then vehicleDecal_vehicleAncestryChangedConnection:Disconnect(); vehicleDecal_vehicleAncestryChangedConnection = nil end
+                vehicleDecal_targetVehicle_instance = nil
+                updateVehicleDecalImageAndColor() 
+            end
+        end)
+        updateVehicleDecalImageAndColor() 
+    else
+        updateVehicleDecalImageAndColor() 
+    end
+end
+
+local function findPlayerVehicleAndSetupConnectionsForDecal()
+    if vehicleDecal_targetVehicle_instance and vehicleDecal_targetVehicle_instance.Parent then return end 
+
+    local playerName = localPlayer.Name
+    local vehiclesFolder = workspace:FindFirstChild("Vehicles")
+
+    local function processFoundVehicle(vehicle)
+        if vehicle and vehicle:IsA("Model") and vehicle.Name == playerName then
+            setupVehicleDecalBlockVehicleConnections(vehicle)
+            if vehicleDecal_vehicleFolder_PlayerVehicle_ChildAddedConnection then
+                vehicleDecal_vehicleFolder_PlayerVehicle_ChildAddedConnection:Disconnect()
+                vehicleDecal_vehicleFolder_PlayerVehicle_ChildAddedConnection = nil
+            end
+            return true
+        end
+        return false
+    end
+
+    if vehiclesFolder then
+        if processFoundVehicle(vehiclesFolder:FindFirstChild(playerName)) then return end
+        
+        if vehicleDecal_vehicleFolder_PlayerVehicle_ChildAddedConnection then vehicleDecal_vehicleFolder_PlayerVehicle_ChildAddedConnection:Disconnect() end
+        vehicleDecal_vehicleFolder_PlayerVehicle_ChildAddedConnection = vehiclesFolder.ChildAdded:Connect(function(child)
+            if processFoundVehicle(child) then
+                if vehicleDecal_vehicleFolder_PlayerVehicle_ChildAddedConnection then 
+                    vehicleDecal_vehicleFolder_PlayerVehicle_ChildAddedConnection:Disconnect()
+                    vehicleDecal_vehicleFolder_PlayerVehicle_ChildAddedConnection = nil
+                end
+            end
+        end)
+    else
+        if vehicleDecal_workspace_VehiclesFolder_ChildAddedConnection then vehicleDecal_workspace_VehiclesFolder_ChildAddedConnection:Disconnect() end
+        vehicleDecal_workspace_VehiclesFolder_ChildAddedConnection = workspace.ChildAdded:Connect(function(child)
+            if child.Name == "Vehicles" and child:IsA("Folder") then
+                if vehicleDecal_workspace_VehiclesFolder_ChildAddedConnection then
+                    vehicleDecal_workspace_VehiclesFolder_ChildAddedConnection:Disconnect()
+                    vehicleDecal_workspace_VehiclesFolder_ChildAddedConnection = nil
+                end
+                findPlayerVehicleAndSetupConnectionsForDecal() 
+            end
+        end)
+    end
+end
+
+
+local function setupVehicleDecalBlockTargetDependencies(targetMeshBlock)
+    vehicleDecal_targetPart_instance = targetMeshBlock 
+
+    if not vehicleDecal_instance then
+        vehicleDecal_instance = Instance.new("Part")
+        vehicleDecal_instance.Name = "DecalBlock_Managed_VehicleHealth"
+        vehicleDecal_instance.Anchored = true; vehicleDecal_instance.CanCollide = false
+        vehicleDecal_instance.Size = vehicleDecal_size; vehicleDecal_instance.Material = Enum.Material.SmoothPlastic
+        
+        local surfaceGui = Instance.new("SurfaceGui", vehicleDecal_instance)
+        surfaceGui.Face = Enum.NormalId.Front
+        surfaceGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+        surfaceGui.PixelsPerStud = vehicleDecal_pixelsPerStud
+        surfaceGui.LightInfluence = 0
+        
+        vehicleDecal_imageLabel_instance = Instance.new("ImageLabel", surfaceGui)
+        vehicleDecal_imageLabel_instance.Size = UDim2.new(1, 0, 1, 0)
+        vehicleDecal_imageLabel_instance.BackgroundTransparency = 1
+        vehicleDecal_imageLabel_instance.ImageTransparency = vehicleDecal_imageTransparency
+    end
+    vehicleDecal_instance.Parent = workspace
+    updateVehicleDecalBlockVisuals()
+
+    if vehicleDecal_targetMeshBlock_AncestryChangedConnection then vehicleDecal_targetMeshBlock_AncestryChangedConnection:Disconnect() end
+    vehicleDecal_targetMeshBlock_AncestryChangedConnection = targetMeshBlock.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            if vehicleDecal_instance and vehicleDecal_instance.Parent then vehicleDecal_instance.Parent = nil end
+            vehicleDecal_targetPart_instance = nil
+        end
+    end)
+    
+    findPlayerVehicleAndSetupConnectionsForDecal() 
+end
+
+local function initializeVehicleDecalBlockSystem()
+    local function findAndSetupAnchorTarget()
+        local targetParent = workspace:FindFirstChild(vehicleDecal_targetParentName) 
+        if not targetParent and localPlayer.Character and localPlayer.Character.Name == vehicleDecal_targetParentName then
+            targetParent = localPlayer.Character
+        end
+
+        if targetParent then
+            local targetMeshBlock = targetParent:FindFirstChild(vehicleDecal_targetMeshBlockName)
+            if targetMeshBlock and targetMeshBlock:IsA("BasePart") then
+                if vehicleDecal_targetParent_ChildAddedConnection then vehicleDecal_targetParent_ChildAddedConnection:Disconnect(); vehicleDecal_targetParent_ChildAddedConnection = nil end
+                setupVehicleDecalBlockTargetDependencies(targetMeshBlock)
+                return true
+            else
+                if vehicleDecal_targetParent_ChildAddedConnection then vehicleDecal_targetParent_ChildAddedConnection:Disconnect() end
+                vehicleDecal_targetParent_ChildAddedConnection = targetParent.ChildAdded:Connect(function(child)
+                    if child.Name == vehicleDecal_targetMeshBlockName and child:IsA("BasePart") then
+                        if vehicleDecal_targetParent_ChildAddedConnection then vehicleDecal_targetParent_ChildAddedConnection:Disconnect(); vehicleDecal_targetParent_ChildAddedConnection = nil end
+                        setupVehicleDecalBlockTargetDependencies(child)
+                    end
+                end)
+            end
+        else
+            if vehicleDecal_targetParent_ChildAddedConnection then vehicleDecal_targetParent_ChildAddedConnection:Disconnect() end
+            vehicleDecal_targetParent_ChildAddedConnection = workspace.ChildAdded:Connect(function(child)
+                if child.Name == vehicleDecal_targetParentName and child == localPlayer.Character then
+                    if vehicleDecal_targetParent_ChildAddedConnection then vehicleDecal_targetParent_ChildAddedConnection:Disconnect(); vehicleDecal_targetParent_ChildAddedConnection = nil end
+                    findAndSetupAnchorTarget()
+                end
+            end)
+        end
+        return false
+    end
+
+    findAndSetupAnchorTarget()
+
+    if not vehicleDecal_heartbeatConnection then
+        vehicleDecal_heartbeatConnection = RunService.Heartbeat:Connect(updateVehicleDecalBlockVisuals)
+    end
+end
+
+local function cleanupVehicleDecalBlockSystem()
+    if vehicleDecal_heartbeatConnection then vehicleDecal_heartbeatConnection:Disconnect(); vehicleDecal_heartbeatConnection = nil end
+    if vehicleDecal_vehicleHealthChangedConnection then vehicleDecal_vehicleHealthChangedConnection:Disconnect(); vehicleDecal_vehicleHealthChangedConnection = nil end
+    if vehicleDecal_vehicleAncestryChangedConnection then vehicleDecal_vehicleAncestryChangedConnection:Disconnect(); vehicleDecal_vehicleAncestryChangedConnection = nil end
+    if vehicleDecal_targetParent_ChildAddedConnection then vehicleDecal_targetParent_ChildAddedConnection:Disconnect(); vehicleDecal_targetParent_ChildAddedConnection = nil end
+    if vehicleDecal_targetMeshBlock_AncestryChangedConnection then vehicleDecal_targetMeshBlock_AncestryChangedConnection:Disconnect(); vehicleDecal_targetMeshBlock_AncestryChangedConnection = nil end
+    if vehicleDecal_workspace_VehiclesFolder_ChildAddedConnection then vehicleDecal_workspace_VehiclesFolder_ChildAddedConnection:Disconnect(); vehicleDecal_workspace_VehiclesFolder_ChildAddedConnection = nil end
+    if vehicleDecal_vehicleFolder_PlayerVehicle_ChildAddedConnection then vehicleDecal_vehicleFolder_PlayerVehicle_ChildAddedConnection:Disconnect(); vehicleDecal_vehicleFolder_PlayerVehicle_ChildAddedConnection = nil end
+
+    if vehicleDecal_instance and vehicleDecal_instance.Parent then vehicleDecal_instance:Destroy() end
+    vehicleDecal_instance = nil
+    vehicleDecal_imageLabel_instance = nil
+    vehicleDecal_targetPart_instance = nil
+    vehicleDecal_targetVehicle_instance = nil
+end
+
+--============================================================================
+-- VEHICLE HEALTH MONITOR SYSTEM FUNCTIONS
+--============================================================================
+local function playVehicleDamageSound()
+    local sound = Instance.new("Sound")
+    sound.SoundId = VEHICLE_HEALTH_SOUND_ID
+    sound.Volume = VEHICLE_HEALTH_SOUND_VOLUME
+    sound.Parent = SoundService 
+    sound:Play()
+    sound.Ended:Connect(function()
+        sound:Destroy()
+    end)
+end
+
+local function setupVehicleHealthMonitoring(vehicleInstance)
+    if not vehicleInstance or not vehicleInstance:IsA("Model") then return end
+    if vehicleMonitor_LastHealthValues[vehicleInstance] ~= nil and vehicleMonitor_LastHealthValues[vehicleInstance] ~= "pending_setup" then
+        return
+    end
+
+    vehicleMonitor_LastHealthValues[vehicleInstance] = vehicleInstance:GetAttribute("currentHealth") 
+
+    local function checkAndTriggerSound()
+        local currentHealth = vehicleInstance:GetAttribute("currentHealth")
+        if typeof(currentHealth) ~= "number" then return end 
+
+        local previousHealth = vehicleMonitor_LastHealthValues[vehicleInstance]
+        local shouldPlay = false
+
+        if currentHealth < VEHICLE_HEALTH_THRESHOLD then
+            if typeof(previousHealth) ~= "number" then 
+                shouldPlay = true
+            elseif previousHealth >= VEHICLE_HEALTH_THRESHOLD then 
+                shouldPlay = true
+            elseif currentHealth < previousHealth then 
+                shouldPlay = true
+            end
+        end
+
+        if shouldPlay then
+            playVehicleDamageSound()
+        end
+        
+        vehicleMonitor_LastHealthValues[vehicleInstance] = currentHealth 
+    end
+
+    checkAndTriggerSound()
+
+    local attributeChangedConn = vehicleInstance:GetAttributeChangedSignal("currentHealth"):Connect(checkAndTriggerSound)
+    table.insert(vehicleMonitor_Connections, attributeChangedConn)
+
+    local ancestryChangedConn = vehicleInstance.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            if attributeChangedConn and attributeChangedConn.Connected then attributeChangedConn:Disconnect() end
+            
+            for i, conn in ipairs(vehicleMonitor_Connections) do
+                if conn == attributeChangedConn or conn == ancestryChangedConn then 
+                    table.remove(vehicleMonitor_Connections, i)
+                    break 
+                end
+            end
+            for i, conn in ipairs(vehicleMonitor_Connections) do 
+                 if conn == ancestryChangedConn then
+                    table.remove(vehicleMonitor_Connections, i)
+                    break
+                end
+            end
+
+            vehicleMonitor_LastHealthValues[vehicleInstance] = nil 
+        end
+    end)
+    table.insert(vehicleMonitor_Connections, ancestryChangedConn)
+end
+
+local function initializePlayerVehicleMonitoring()
+    local playerName = localPlayer.Name
+    local vehiclesFolder = workspace:FindFirstChild("Vehicles")
+
+    local function processVehicle(vehicle)
+        if vehicle and vehicle:IsA("Model") and vehicle.Name == playerName then
+            if vehicleMonitor_LastHealthValues[vehicle] == nil or vehicleMonitor_LastHealthValues[vehicle] == "pending_setup" then
+                 vehicleMonitor_LastHealthValues[vehicle] = "pending_setup" 
+                 setupVehicleHealthMonitoring(vehicle)
+            end
+        end
+    end
+
+    if vehiclesFolder then
+    processVehicle(vehiclesFolder:FindFirstChild(playerName))
+    
+    local childAddedConn = vehiclesFolder.ChildAdded:Connect(function(child)
+        if child.Name == playerName then 
+            processVehicle(child)
+        end
+    end)
+    table.insert(vehicleMonitor_Connections, childAddedConn)
+else
+    local workspaceChildAddedConn = workspace.ChildAdded:Connect(function(child)
+        if child.Name == "Vehicles" and child:IsA("Folder") then
+            vehiclesFolder = child 
+            processVehicle(vehiclesFolder:FindFirstChild(playerName))
+            
+            local folderChildAddedConn = vehiclesFolder.ChildAdded:Connect(function(vehicleInFolder)
+                 if vehicleInFolder.Name == playerName then 
+                    processVehicle(vehicleInFolder)
+                end
+            end)
+            table.insert(vehicleMonitor_Connections, folderChildAddedConn)
+        end
+    end)
+    table.insert(vehicleMonitor_Connections, workspaceChildAddedConn)
+end
+end
+
+--============================================================================
+-- CUSTOM VEHICLE MODIFICATIONS (User Request)
+--============================================================================
+local function findDescendantByPath(ancestor, pathString)
+    if not ancestor or type(pathString) ~= "string" then return nil end
+    local current = ancestor
+    for partName in string.gmatch(pathString, "([^.]+)") do
+        if not current then return nil end 
+        local foundChild = current:FindFirstChild(partName)
+        if not foundChild then
+            return nil 
+        end
+        current = foundChild
+    end
+    return current
+end
+
+local function createVehicleAttachedMesh(vehicleModel)
+    if not vehicleModel or not vehicleModel:IsA("Model") then
+        return
+    end
+
+    local anchorPart = findDescendantByPath(vehicleModel, vehicleAttachedMesh_anchorPathInVehicle)
+
+    if not anchorPart then
+        return
+    end
+    if not anchorPart:IsA("BasePart") then
+        return
+    end
+    if not anchorPart.Parent then
+        return
+    end
+
+    local meshPartNamePattern = "MeshBlock_%s"
+    local motorNamePattern = "MeshMotor6D_%s"
+
+    local actualMeshPartName = string.format(meshPartNamePattern, vehicleAttachedMesh_uniqueBlockId)
+    local actualMotorName = string.format(motorNamePattern, vehicleAttachedMesh_uniqueBlockId)
+
+    local meshPartContainer = anchorPart.Parent 
+
+    local existingBlock = meshPartContainer:FindFirstChild(actualMeshPartName)
+    if existingBlock then existingBlock:Destroy() end
+    local existingMotor = anchorPart:FindFirstChild(actualMotorName)
+    if existingMotor then existingMotor:Destroy() end
+    
+    vehicleAttachedMesh_data = { meshPart = nil, motor = nil } 
+
+    local meshPart = Instance.new("Part")
+    meshPart.Name = actualMeshPartName
+    meshPart.Size = Vector3.new(1,1,1) 
+    meshPart.Anchored = false
+    meshPart.CanCollide = false
+    meshPart.CanTouch = false
+    meshPart.CanQuery = false
+    meshPart.Transparency = vehicleAttachedMesh_transparency
+    meshPart.Parent = meshPartContainer
+
+    local motor = Instance.new("Motor6D")
+    motor.Name = actualMotorName
+    motor.Part0 = anchorPart
+    motor.Part1 = meshPart
+    motor.C0 = vehicleAttachedMesh_C0
+    motor.Parent = anchorPart
+
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType = Enum.MeshType.FileMesh
+    mesh.MeshId = vehicleAttachedMesh_meshId
+    mesh.Scale = vehicleAttachedMesh_scale
+    mesh.VertexColor = vehicleAttachedMesh_vertexColor
+    if vehicleAttachedMesh_textureId and vehicleAttachedMesh_textureId ~= "" then
+        mesh.TextureId = vehicleAttachedMesh_textureId
+    else
+        mesh.TextureId = ""
+    end
+    mesh.Parent = meshPart
+
+    vehicleAttachedMesh_data.meshPart = meshPart
+    vehicleAttachedMesh_data.motor = motor
+end
+
+local function cleanupVehicleAttachedMesh()
+    if vehicleAttachedMesh_data.motor and vehicleAttachedMesh_data.motor.Parent then
+        vehicleAttachedMesh_data.motor:Destroy()
+    end
+    if vehicleAttachedMesh_data.meshPart and vehicleAttachedMesh_data.meshPart.Parent then
+        vehicleAttachedMesh_data.meshPart:Destroy()
+    end
+    vehicleAttachedMesh_data = { meshPart = nil, motor = nil }
+end
+
+
+local function applyCustomVehicleModificationsByVixel(vehicleName)
+    local vehiclesFolder = workspace:FindFirstChild("Vehicles")
+    if not vehiclesFolder then
+        local success, foundFolder = pcall(function() return workspace:WaitForChild("Vehicles", 30) end)
+        if not success or not foundFolder then
+            return
+        end
+        vehiclesFolder = foundFolder
+    end
+
+    local vehicle = vehiclesFolder:FindFirstChild(vehicleName)
+    if not vehicle then
+        local success, foundVehicle = pcall(function() return vehiclesFolder:WaitForChild(vehicleName, 30) end)
+        if not success or not foundVehicle then
+            return
+        end
+        vehicle = foundVehicle
+    end
+
+    if not vehicle:IsA("Model") then
+        return
+    end
+
+    createVehicleAttachedMesh(vehicle) 
+
+    local rimPathsConfig = {
+        {Path = "Body.Wheels.FL.Rim.Main"}, {Path = "Body.Wheels.RR.Rim.Main"},
+        {Path = "Body.Wheels.RL.Rim.Main"}, {Path = "Body.Wheels.FR.Rim.Main"},
+    }
+    local darkGrayColor = Color3.fromRGB(80, 80, 80) 
+    local rimsModified = false
+    for _, config in ipairs(rimPathsConfig) do
+        local rim = findDescendantByPath(vehicle, config.Path)
+        if rim and rim:IsA("BasePart") then
+            rim.Color = darkGrayColor
+            rimsModified = true
+        else
+            -- Rim not found or not a BasePart
+        end
+    end
+
+    local licensePlatePathsConfig = {
+        {Path = "Body.LicensePlates.Front.Gui.TextLabel"}, {Path = "Body.LicensePlates.Back.Gui.TextLabel"},
+    }
+    local platesModified = false
+    for _, config in ipairs(licensePlatePathsConfig) do
+        local plateLabel = findDescendantByPath(vehicle, config.Path)
+        if plateLabel and plateLabel:IsA("TextLabel") then
+            plateLabel.Text = "拼兗人國"
+            platesModified = true
+        else
+            -- License plate TextLabel not found
+        end
+    end
+
+    local carBody = findDescendantByPath(vehicle, "Body.Body")
+    if carBody and carBody:IsA("BasePart") then
+        carBody.Color = Color3.fromRGB(49, 47, 49)
+        carBody.Material = Enum.Material.DiamondPlate
+    else
+        -- Car body part not found
+    end
+
+    local silverLine = findDescendantByPath(vehicle, "Body.Silver")
+    if silverLine and silverLine:IsA("BasePart") then
+        silverLine.Color = Color3.fromRGB(99, 95, 98)
+    else
+        -- Silver line part not found
+    end
+
+    local attributesToModify = {
+        {Name = "engineLevel", Value = 6}, {Name = "brakesLevel", Value = 6}, {Name = "armorLevel", Value = 6},
+    }
+    local attributesModified = false
+    for _, attrConfig in ipairs(attributesToModify) do
+        local success, err = pcall(function() vehicle:SetAttribute(attrConfig.Name, attrConfig.Value) end)
+        if success then
+            attributesModified = true
+        else
+            -- Failed to set attribute
+        end
+    end
+end
+
+--============================================================================
+-- HEALTH REACTIVE NEONS SYSTEM (New Script Integration)
+--============================================================================
+local function setupHealthReactiveNeons(character)
+    if not character then
+        return
+    end
+    
+    local player = localPlayer 
+
+    local anchorPart = character:FindFirstChild("Head") or
+                       character:FindFirstChild("HumanoidRootPart") or
+                       character:FindFirstChild("Torso")
+    
+    if not anchorPart then
+        return
+    end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then
+        return
+    end
+
+    local driveSeat = nil 
+
+    local function findPlayerDriveSeat()
+        local playerName = player.Name
+        local vehiclesFolder = workspace:FindFirstChild("Vehicles")
+        if not vehiclesFolder then return nil end
+        local playerVehicle = vehiclesFolder:FindFirstChild(playerName)
+        if not playerVehicle then return nil end
+        local foundDriveSeat = playerVehicle:FindFirstChild("DriveSeat")
+        return foundDriveSeat
+    end
+    
+    driveSeat = findPlayerDriveSeat() 
+    
+    local previousHealth = humanoid.Health
+    local isFlashing = false
+    local isDying = false
+    local isSeated = false
+    local previousSeatedState = false
+    
+    local neonPartsArray = {} 
+    local flashTweens = {}
+    local dyingTweens = {}
+    local heartbeatConnection = nil 
+
+    local function getHealthColor(currentHealth, maxHealth)
+        local healthPercent = currentHealth / maxHealth
+        if healthPercent > 0.5 then
+            local factor = (1 - healthPercent) * 2
+            local r = math.floor(152 + (255 - 152) * factor)
+            local g = math.floor(252 - (252 - 165) * factor)
+            local b = math.floor(249 - 249 * factor)
+            return Color3.fromRGB(r, g, b)
+        else
+            local factor = healthPercent * 2
+            local r = 255
+            local g = math.floor(165 * factor)
+            local b = 0
+            return Color3.fromRGB(r, g, b)
+        end
+    end
+    
+    local function tryFindDriveSeat()
+        if driveSeat and driveSeat.Parent then return driveSeat end
+        driveSeat = findPlayerDriveSeat()
+        return driveSeat
+    end
+    
+    local function setNeonsVisibility(visible, smooth)
+        if not neonPartsArray or #neonPartsArray == 0 then return end
+        local targetTransparency = visible and 0 or 1
+        local tweenTime = smooth and 0.5 or 0
+        
+        for _, neonData in ipairs(neonPartsArray) do
+            if neonData and neonData.part and neonData.part.Parent and neonData.light and neonData.light.Parent then
+                if tweenTime > 0 then
+                    local visibilityTween = TweenService:Create(neonData.part, TweenInfo.new(tweenTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = targetTransparency})
+                    local lightTween = TweenService:Create(neonData.light, TweenInfo.new(tweenTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Brightness = visible and (neonData.originalBrightness or 0) or 0})
+                    visibilityTween:Play(); lightTween:Play()
+                else
+                    neonData.part.Transparency = targetTransparency
+                    neonData.light.Brightness = visible and (neonData.originalBrightness or 0) or 0
+                end
+            end
+        end
+    end
+    
+    local function checkSeatedState()
+        local currentDriveSeat = tryFindDriveSeat()
+        if not currentDriveSeat or not humanoid or not humanoid.Parent then return false end
+        return humanoid.Sit and humanoid.SeatPart == currentDriveSeat
+    end
+    
+    local function startDyingEffect()
+        if isDying or isSeated then return end; isDying = true
+        for _, tween in pairs(dyingTweens) do if tween and tween.Cancel then tween:Cancel() end end; dyingTweens = {}
+        for _, neonData in ipairs(neonPartsArray) do
+            if neonData and neonData.part and neonData.part.Parent and neonData.light and neonData.light.Parent then
+                local dyingFlash = TweenService:Create(neonData.part, TweenInfo.new(0.15, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true, 0), {Color = Color3.fromRGB(255,0,0), Transparency = 0.3})
+                local dyingLightFlash = TweenService:Create(neonData.light, TweenInfo.new(0.15, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true, 0), {Color = Color3.fromRGB(255,0,0), Brightness = (neonData.originalBrightness or 0) * 5})
+                dyingFlash:Play(); dyingLightFlash:Play()
+                table.insert(dyingTweens, dyingFlash); table.insert(dyingTweens, dyingLightFlash)
+            end
+        end
+    end
+    
+    local function stopDyingEffect()
+        if not isDying then return end; isDying = false
+        for _, tween in pairs(dyingTweens) do if tween and tween.Cancel then tween:Cancel() end end; dyingTweens = {}
+        if not isSeated then
+            for _, neonData in ipairs(neonPartsArray) do
+                if neonData and neonData.part and neonData.part.Parent and neonData.light and neonData.light.Parent then
+                    local normalColor = getHealthColor(humanoid.Health, humanoid.MaxHealth)
+                    local returnNormal = TweenService:Create(neonData.part, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = normalColor, Transparency = 0})
+                    local returnNormalLight = TweenService:Create(neonData.light, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = normalColor, Brightness = neonData.originalBrightness or 0})
+                    returnNormal:Play(); returnNormalLight:Play()
+                end
+            end
+        end
+    end
+    
+    local function flashDamage()
+        if isFlashing or isDying or isSeated or not neonPartsArray or #neonPartsArray == 0 then return end; isFlashing = true
+        for _, tween in pairs(flashTweens) do if tween and tween.Cancel then tween:Cancel() end end; flashTweens = {}
+        for _, neonData in ipairs(neonPartsArray) do
+            if neonData and neonData.part and neonData.part.Parent and neonData.light and neonData.light.Parent then
+                local flashWhite = TweenService:Create(neonData.part, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = Color3.fromRGB(255,255,255)})
+                local flashWhiteLight = TweenService:Create(neonData.light, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = Color3.fromRGB(255,255,255), Brightness = (neonData.originalBrightness or 0) * 3})
+                local flashRed = TweenService:Create(neonData.part, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = Color3.fromRGB(255,50,50)})
+                local flashRedLight = TweenService:Create(neonData.light, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = Color3.fromRGB(255,50,50)})
+                local returnNormal = TweenService:Create(neonData.part, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = getHealthColor(humanoid.Health, humanoid.MaxHealth)})
+                local returnNormalLight = TweenService:Create(neonData.light, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = getHealthColor(humanoid.Health, humanoid.MaxHealth), Brightness = neonData.originalBrightness or 0})
+                flashWhite:Play(); flashWhiteLight:Play()
+                flashWhite.Completed:Connect(function() if not flashWhite then return end; flashRed:Play(); flashRedLight:Play()
+                    flashRed.Completed:Connect(function() if not flashRed then return end; returnNormal:Play(); returnNormalLight:Play()
+                        returnNormal.Completed:Connect(function() isFlashing = false end) end) end)
+                table.insert(flashTweens, flashWhite); table.insert(flashTweens, flashRed); table.insert(flashTweens, returnNormal)
+                table.insert(flashTweens, flashWhiteLight); table.insert(flashTweens, flashRedLight); table.insert(flashTweens, returnNormalLight)
+            end
+        end
+    end
+    
+    local function pulseHeal()
+        if isFlashing or isDying or isSeated or not neonPartsArray or #neonPartsArray == 0 then return end; isFlashing = true
+        for _, neonData in ipairs(neonPartsArray) do
+            if neonData and neonData.part and neonData.part.Parent and neonData.light and neonData.light.Parent then
+                local pulseGreen = TweenService:Create(neonData.part, TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Color = Color3.fromRGB(50,255,100)})
+                local pulseGreenLight = TweenService:Create(neonData.light, TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Color = Color3.fromRGB(50,255,100), Brightness = (neonData.originalBrightness or 0) * 2})
+                local returnNormal = TweenService:Create(neonData.part, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Color = getHealthColor(humanoid.Health, humanoid.MaxHealth)})
+                local returnNormalLight = TweenService:Create(neonData.light, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Color = getHealthColor(humanoid.Health, humanoid.MaxHealth), Brightness = neonData.originalBrightness or 0})
+                pulseGreen:Play(); pulseGreenLight:Play()
+                pulseGreen.Completed:Connect(function() if not pulseGreen then return end; returnNormal:Play(); returnNormalLight:Play()
+                    returnNormal.Completed:Connect(function() isFlashing = false end) end)
+                table.insert(flashTweens, pulseGreen); table.insert(flashTweens, returnNormal);
+                table.insert(flashTweens, pulseGreenLight); table.insert(flashTweens, returnNormalLight);
+            end
+        end
+    end
+    
+    local function createAnimatedNeon(config, delay)
+        task.wait(delay)
+        local circlePart = Instance.new("Part")
+        circlePart.Name = "HealthReactiveNeon_" .. player.Name .. "_" .. config.id 
+        circlePart.Shape = Enum.PartType.Block; circlePart.Material = Enum.Material.Neon
+        circlePart.Color = getHealthColor(humanoid.Health, humanoid.MaxHealth)
+        circlePart.Size = Vector3.new(0.001,0.001,0.001); circlePart.Anchored = false
+        circlePart.CanCollide = false; circlePart.Transparency = 1
+        circlePart.CFrame = anchorPart.CFrame * CFrame.new(config.offset) * CFrame.Angles(math.rad(config.rotation.X), math.rad(config.rotation.Y), math.rad(config.rotation.Z))
+        circlePart.Parent = workspace 
+        local weld = Instance.new("WeldConstraint"); weld.Part0 = anchorPart; weld.Part1 = circlePart; weld.Parent = circlePart
+        local surfaceLight = Instance.new("SurfaceLight"); surfaceLight.Color = getHealthColor(humanoid.Health, humanoid.MaxHealth)
+        surfaceLight.Brightness = 0; surfaceLight.Face = config.lightFace; surfaceLight.Enabled = true; surfaceLight.Parent = circlePart
+        local sound = Instance.new("Sound"); sound.SoundId = "rbxassetid://9117060548"; sound.Volume = 0.7
+        sound.Pitch = 1 + (config.id - 1) * 0.1; sound.Parent = circlePart; sound:Play()
+        local initiallySeated = checkSeatedState()
+        local appearTween = TweenService:Create(circlePart, TweenInfo.new(0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = Vector3.new(0.100,0.100,0.100), Transparency = initiallySeated and 1 or 0})
+        local lightAppearTween = TweenService:Create(surfaceLight, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0.3), {Brightness = initiallySeated and 0 or config.brightness})
+        appearTween:Play(); lightAppearTween:Play()
+        task.delay(2, function() if sound and sound.Parent then sound:Destroy() end end)
+        return {part = circlePart, light = surfaceLight, originalBrightness = config.brightness, weld = weld}
+    end
+    
+    local neonConfigs = {
+        {id = 1, offset = Vector3.new(0.520,0.700,0.200), rotation = Vector3.new(0,0,37.900), lightFace = Enum.NormalId.Top, brightness = 0},
+        {id = 2, offset = Vector3.new(0.520,0.700,0.060), rotation = Vector3.new(0,0,37.900), lightFace = Enum.NormalId.Bottom, brightness = 0},
+        {id = 3, offset = Vector3.new(0.520,0.700,-0.090), rotation = Vector3.new(0,0,37.900), lightFace = Enum.NormalId.Top, brightness = 0}
+    }
+    
+    task.spawn(function()
+        for i, config in ipairs(neonConfigs) do
+            local neonData = createAnimatedNeon(config, i * 0.15) 
+            if neonData then table.insert(neonPartsArray, neonData) end
+        end
+        task.wait(2) 
+        isSeated = checkSeatedState(); previousSeatedState = isSeated
+        setNeonsVisibility(not isSeated, false) 
+        previousHealth = humanoid.Health
+        if heartbeatConnection and heartbeatConnection.Connected then heartbeatConnection:Disconnect() end
+
+        heartbeatConnection = RunService.Heartbeat:Connect(function()
+            if not character or not character.Parent or not humanoid or not humanoid.Parent then
+                if heartbeatConnection then heartbeatConnection:Disconnect(); heartbeatConnection = nil; end
+                return
+            end
+            local currentSeatedState = checkSeatedState()
+            if currentSeatedState ~= previousSeatedState then
+                isSeated = currentSeatedState; previousSeatedState = currentSeatedState
+                setNeonsVisibility(not isSeated, true)
+                if isSeated then if isDying then stopDyingEffect() end end
+            end
+            local currentHealth = humanoid.Health; local maxHealth = humanoid.MaxHealth
+            local healthPercent = currentHealth / maxHealth; local healthDifference = currentHealth - previousHealth
+            if not isSeated then
+                if healthPercent <= 0.2 and currentHealth > 0 then
+                    if not isDying then startDyingEffect() end
+                else
+                    if isDying then stopDyingEffect() end
+                end
+            else
+                if isDying then stopDyingEffect() end
+            end
+            if not isDying and not isSeated and math.abs(healthDifference) > 0.1 and not isFlashing then
+                if healthDifference < 0 then flashDamage()
+                elseif healthDifference >= 15 then pulseHeal() end
+            end
+            previousHealth = currentHealth
+            if not isFlashing and not isDying and not isSeated then
+                local newColor = getHealthColor(currentHealth, maxHealth)
+                for _, neonData in ipairs(neonPartsArray) do
+                    if neonData and neonData.part and neonData.part.Parent and neonData.light and neonData.light.Parent then
+                        neonData.part.Color = newColor
+                        if neonData.light then neonData.light.Color = newColor end
+                    end
+                end
+            end
+        end)
+    end)
+
+    local function cleanupCharacterHealthNeons()
+        if heartbeatConnection and heartbeatConnection.Connected then
+            heartbeatConnection:Disconnect(); heartbeatConnection = nil
+        end
+        for _, tween in pairs(flashTweens or {}) do if tween and tween.Cancel then tween:Cancel() end end; flashTweens = {}
+        for _, tween in pairs(dyingTweens or {}) do if tween and tween.Cancel then tween:Cancel() end end; dyingTweens = {}
+        for _, neonData in ipairs(neonPartsArray or {}) do
+            if neonData then
+                if neonData.weld and neonData.weld.Parent then neonData.weld:Destroy() end 
+                if neonData.part and neonData.part.Parent then neonData.part:Destroy() end 
+            end
+        end
+        neonPartsArray = {}
+    end
+    return cleanupCharacterHealthNeons 
+end
+
+--============================================================================
+-- CHARACTER EVENT HANDLERS & CLEANUP
+--============================================================================
+local function destroyAllS1DerivedPartsAndResetState()
+    s1_fakeAccessoryParts = destroyPartsInTable(s1_fakeAccessoryParts)
+    if currentCharacter then 
+        local mb = currentCharacter:FindFirstChild("MeshBlock")
+        if mb then mb:Destroy() end
+        local anchor = currentCharacter:FindFirstChild("UpperTorso") or currentCharacter:FindFirstChild("HumanoidRootPart") or currentCharacter:FindFirstChild("LowerTorso") or currentCharacter:FindFirstChild("Torso")
+        if anchor then
+            local m6d_pasted = anchor:FindFirstChild("MeshMotor6D_Pasted")
+            if m6d_pasted then m6d_pasted:Destroy() end
+            local m6d_unique = anchor:FindFirstChild("MeshMotor6D_5B17CEDE") 
+            if m6d_unique then m6d_unique:Destroy() end
+        end
+        local mb_unique = currentCharacter:FindFirstChild("MeshBlock_5B17CEDE")
+        if mb_unique then mb_unique:Destroy() end
+    end
+    s1_targetAttachmentPart = nil
+    
+    s2_fakeToolParts = destroyPartsInTable(s2_fakeToolParts)
+    if s2_m4MagSizeAttributeConnection then 
+        s2_m4MagSizeAttributeConnection:Disconnect()
+        s2_m4MagSizeAttributeConnection = nil
+    end
+    s2_m4LastMagSize = nil
+    s2_currentM4Tool = nil
+    
+    s3_fakeToolParts = destroyPartsInTable(s3_fakeToolParts)
+    s3_currentGlockTool = nil
+end
+
+local function onCharacterAdded(characterModel)
+    if healthReactiveNeonCleaners[currentCharacter] then
+        healthReactiveNeonCleaners[currentCharacter]()
+        healthReactiveNeonCleaners[currentCharacter] = nil
+    end
+    if healthReactiveNeonCleaners[characterModel] then 
+        healthReactiveNeonCleaners[characterModel]()
+        healthReactiveNeonCleaners[characterModel] = nil
+    end
+
+    currentCharacter = characterModel
+    
+    local lowHealthWarningPlayed = false 
+    local activeLowHealthSound = nil    
+    local lowHealthSoundTween = nil     
+
+    local oldSoundName = "LowHealthWarningSound_" .. localPlayer.Name
+    local existingSound = SoundService:FindFirstChild(oldSoundName)
+    if existingSound then
+        existingSound:Destroy()
+    end
+    
+    destroyAllS1DerivedPartsAndResetState()
+    s4_cleanupNeonCharacterPartsAndConnections() 
+    s5_cleanupLimbMeshes() 
+    cleanupHeadAccessoryAndNeon()
+    cleanupDecalBlockSystem() 
+    cleanupVehicleDecalBlockSystem() 
+
+    s4_lightStateToRestore_Neon = nil
+    s4_areMeshesHiddenBySeat = false 
+    s4_isLightOn_Neon = true 
+
+    if s1_CONFIG_OriginalMeshBlockEnabled then s1_createOriginalMeshBlock(characterModel) end
+    if s1_CONFIG_UniqueIdMeshBlockEnabled then s1_createUniqueIdMeshBlock(characterModel, "5B17CEDE") end
+    if s1_CONFIG_PermanentWeaponMeshesEnabled then s1_initializeAndSetupPermanentCharacterAttachments(characterModel) end
+
+    local humanoid = characterModel:FindFirstChildOfClass("Humanoid")
+    if humanoid then 
+        humanoid.AutoRotate = true 
+    end
+
+    for _, conn in ipairs(characterConnections) do conn:Disconnect() end; characterConnections = {}
+    local function handleToolAdded(child)
+        if child:IsA("Tool") then
+            if s2_CONFIG_M4Enabled and child.Name == s2_CONFIG_M4ToolName then s2_applyModificationsToM4Tool(child)
+            elseif s3_CONFIG_GlockEnabled and child.Name == s3_CONFIG_GlockToolName then s3_applyModificationsToGlockTool(child) end
+        end
+    end
+    local function handleToolRemoved(child)
+        if child:IsA("Tool") then
+            if s2_CONFIG_M4Enabled and child.Name == s2_CONFIG_M4ToolName and child == s2_currentM4Tool then
+                s2_fakeToolParts = destroyPartsInTable(s2_fakeToolParts)
+                if s2_m4MagSizeAttributeConnection then
+                    s2_m4MagSizeAttributeConnection:Disconnect()
+                    s2_m4MagSizeAttributeConnection = nil
+                end
+                s2_m4LastMagSize = nil
+                s2_currentM4Tool = nil; 
+            elseif s3_CONFIG_GlockEnabled and child.Name == s3_CONFIG_GlockToolName and child == s3_currentGlockTool then
+                s3_fakeToolParts = destroyPartsInTable(s3_fakeToolParts)
+                s3_currentGlockTool = nil; 
+            end
+        end
+    end
+    for _, child in ipairs(characterModel:GetChildren()) do handleToolAdded(child) end
+    table.insert(characterConnections, characterModel.ChildAdded:Connect(handleToolAdded))
+    table.insert(characterConnections, characterModel.ChildRemoved:Connect(handleToolRemoved))
+    
+    if humanoid then
+        local lowHealthConn = humanoid.HealthChanged:Connect(function(health)
+            if not currentCharacter or not currentCharacter.Parent or humanoid.Health <= 0 then return end
+            local maxHealth = humanoid.MaxHealth
+            local healthPercentage = (maxHealth > 0) and (health / maxHealth) or 0
+            if healthPercentage < 0.5 then
+                if not lowHealthWarningPlayed then 
+                    lowHealthWarningPlayed = true
+                    if lowHealthSoundTween then lowHealthSoundTween:Cancel(); lowHealthSoundTween = nil; end
+                    if activeLowHealthSound and activeLowHealthSound.Parent then activeLowHealthSound:Destroy(); activeLowHealthSound = nil; end
+                    activeLowHealthSound = Instance.new("Sound")
+                    activeLowHealthSound.Name = "LowHealthWarningSound_" .. localPlayer.Name 
+                    activeLowHealthSound.SoundId = "rbxassetid://9043365842"; activeLowHealthSound.Volume = 1.6 
+                    activeLowHealthSound.Parent = SoundService; activeLowHealthSound:Play()
+                    local soundInstance = activeLowHealthSound 
+                    soundInstance.Ended:Connect(function()
+                        if soundInstance and soundInstance.Parent then soundInstance:Destroy() end
+                        if activeLowHealthSound == soundInstance then activeLowHealthSound = nil end
+                    end)
+                end
+            else 
+                if healthPercentage >= 0.7 then 
+                    if lowHealthWarningPlayed then lowHealthWarningPlayed = false end
+                    if activeLowHealthSound and activeLowHealthSound.Parent and activeLowHealthSound.IsPlaying then
+                        if not lowHealthSoundTween or lowHealthSoundTween.Instance ~= activeLowHealthSound then
+                            if lowHealthSoundTween then lowHealthSoundTween:Cancel(); lowHealthSoundTween = nil; end
+                            local soundToFade = activeLowHealthSound
+                            lowHealthSoundTween = TweenService:Create(soundToFade, TweenInfo.new(2), {Volume = 0}) 
+                            lowHealthSoundTween.Completed:Connect(function(playbackState)
+                                if soundToFade and soundToFade.Parent then soundToFade:Destroy() end
+                                if activeLowHealthSound == soundToFade then activeLowHealthSound = nil end
+                                if lowHealthSoundTween and lowHealthSoundTween.Instance == soundToFade then lowHealthSoundTween = nil end
+                            end)
+                            lowHealthSoundTween:Play()
+                        end
+                    end
+                elseif healthPercentage >= 0.5 and healthPercentage < 0.7 then 
+                    if lowHealthSoundTween and lowHealthSoundTween.PlaybackState == Enum.PlaybackState.Playing then
+                        lowHealthSoundTween:Cancel(); lowHealthSoundTween = nil
+                        if activeLowHealthSound and activeLowHealthSound.Parent then activeLowHealthSound.Volume = 1.6 end
+                    end
+                end
+            end
+        end)
+        table.insert(characterConnections, lowHealthConn)
+        
+        local diedConn = humanoid.Died:Connect(function()
+            if lowHealthSoundTween then lowHealthSoundTween:Cancel(); lowHealthSoundTween = nil; end
+            if activeLowHealthSound and activeLowHealthSound.Parent then
+                if activeLowHealthSound.IsPlaying then
+                    local soundToFadeOnDeath = activeLowHealthSound; activeLowHealthSound = nil 
+                    local deathFadeTween = TweenService:Create(soundToFadeOnDeath, TweenInfo.new(1), {Volume = 0}) 
+                    deathFadeTween.Completed:Connect(function() if soundToFadeOnDeath and soundToFadeOnDeath.Parent then soundToFadeOnDeath:Destroy() end end)
+                    deathFadeTween:Play()
+                else
+                    if activeLowHealthSound and activeLowHealthSound.Parent then activeLowHealthSound:Destroy() end
+                    activeLowHealthSound = nil
+                end
+            end
+        end)
+        table.insert(characterConnections, diedConn)
+    end
+
+    s4_setupCharacterParts(characterModel)
+    s5_initializeLimbMeshes(characterModel)
+    applyCharacterModifications(characterModel)
+    createHeadAccessoryAndNeon(characterModel)
+    initializeDecalBlockSystem() 
+    initializeVehicleDecalBlockSystem()
+
+    local hrNeonCleaner = setupHealthReactiveNeons(characterModel)
+    if hrNeonCleaner then
+        healthReactiveNeonCleaners[characterModel] = hrNeonCleaner
+    end
+
+    initialEffectsPlayed = false 
+    playIntroEffects(characterModel)
+end
+
+--============================================================================
+-- RENDERSTEPPED (MAIN UPDATE LOOP)
+--============================================================================
+RunService.RenderStepped:Connect(function(dt)
+    if not currentCharacter or not currentCharacter.Parent then
+        if next(s1_fakeAccessoryParts) or next(s2_fakeToolParts) or next(s3_fakeToolParts) or s4_circlePart_Neon_Instance or next(s5_limbMeshParts) or next(headAccessory_createdParts) then
+            destroyAllS1DerivedPartsAndResetState()
+            s4_cleanupNeonCharacterPartsAndConnections()
+            s5_cleanupLimbMeshes()
+            cleanupHeadAccessoryAndNeon()
+        end
+        return
+    end
+
+    local characterIsVisible = true
+    if currentCharacter then
+        local visibleAttribute = currentCharacter:GetAttribute("Visible")
+        if visibleAttribute == false then characterIsVisible = false end
+    end
+    local humanoid = currentCharacter:FindFirstChildOfClass("Humanoid")
+    local hrp = currentCharacter:FindFirstChild("HumanoidRootPart")
+
+    local masterTransparency = not characterIsVisible and 1 or nil 
+
+    if s1_CONFIG_PermanentWeaponMeshesEnabled then
+        if not s1_targetAttachmentPart or not s1_targetAttachmentPart.Parent then
+            s1_fakeAccessoryParts = destroyPartsInTable(s1_fakeAccessoryParts)
+            s1_targetAttachmentPart = nil
+        else
+            local glock17Equipped = currentCharacter:FindFirstChild(s3_CONFIG_GlockToolName) and s3_CONFIG_GlockEnabled
+            local m4CarbineEquipped = currentCharacter:FindFirstChild(s2_CONFIG_M4ToolName) and s2_CONFIG_M4Enabled
+            for id, part in pairs(s1_fakeAccessoryParts) do
+                if part and part.Parent then
+                    if masterTransparency then part.Transparency = masterTransparency
+                    else
+                        if s1_m4CarbineControlledMeshIds[id] then part.Transparency = m4CarbineEquipped and 1 or 0
+                        else part.Transparency = glock17Equipped and 1 or 0 end
+                    end
+                end
+            end
+        end
+    end
+
+    if currentCharacter then
+        if s1_CONFIG_OriginalMeshBlockEnabled then
+            local originalMeshBlock = currentCharacter:FindFirstChild("MeshBlock")
+            if originalMeshBlock and originalMeshBlock:IsA("BasePart") then originalMeshBlock.Transparency = masterTransparency or 0 end
+        end
+        if s1_CONFIG_UniqueIdMeshBlockEnabled then
+            local uniqueMeshBlock = currentCharacter:FindFirstChild("MeshBlock_5B17CEDE")
+            if uniqueMeshBlock and uniqueMeshBlock:IsA("BasePart") then uniqueMeshBlock.Transparency = masterTransparency or 0 end
+        end
+    end
+    
+    for _, data in ipairs(s5_limbMeshParts) do
+        if data.meshPart and data.meshPart.Parent then
+            local baseTransparency = 0 
+            for _, cfg in ipairs(s5_meshConfigurations) do if cfg.uniqueBlockId == data.uniqueBlockId then baseTransparency = cfg.transparency or 0; break; end end
+            data.meshPart.Transparency = masterTransparency or baseTransparency
+        end
+    end
+
+    if headAccessory_createdParts.meshPart and headAccessory_createdParts.meshPart.Parent then
+        local baseTransparency = 0 
+        headAccessory_createdParts.meshPart.Transparency = masterTransparency or baseTransparency
+        if headAccessory_createdParts.neonPart then
+             headAccessory_createdParts.neonPart.Transparency = masterTransparency or baseTransparency
+        end
+    end
+
+    if s2_CONFIG_M4Enabled then
+        local m4ToolInstance = s2_currentM4Tool; local m4ToolAttachmentPart = nil
+        if m4ToolInstance and m4ToolInstance.Parent == currentCharacter then
+            m4ToolAttachmentPart = m4ToolInstance:FindFirstChild(s2_CONFIG_M4TargetPartName)
+            if not (m4ToolAttachmentPart and m4ToolAttachmentPart:IsA("BasePart")) then m4ToolAttachmentPart = nil end
+        end
+        if m4ToolInstance and m4ToolAttachmentPart then
+            for meshId, fakePart in pairs(s2_fakeToolParts) do
+                local meshConfig; for _, cfg in ipairs(m4_customMeshes) do if cfg.meshId == meshId then meshConfig = cfg; break end end
+                if fakePart and meshConfig then
+                    if not fakePart.Parent then fakePart.Parent = workspace end
+                    fakePart.CFrame = m4ToolAttachmentPart.CFrame * meshConfig.offset
+                    if fakePart.Mesh then fakePart.Mesh.Scale = meshConfig.scale end; fakePart.Color = meshConfig.color
+                    fakePart.Transparency = masterTransparency or 0
+                elseif fakePart then fakePart:Destroy(); s2_fakeToolParts[meshId] = nil end
+            end
+        else
+            for _, fakePart in pairs(s2_fakeToolParts) do if fakePart and fakePart.Parent then fakePart.Parent = nil end end
+        end
+    end
+
+    if s3_CONFIG_GlockEnabled then
+        local glockToolInstance = s3_currentGlockTool; local glockToolAttachmentPart = nil
+        if glockToolInstance and glockToolInstance.Parent == currentCharacter then
+             glockToolAttachmentPart = glockToolInstance:FindFirstChild(s3_CONFIG_GlockTargetPartName)
+             if not (glockToolAttachmentPart and glockToolAttachmentPart:IsA("BasePart")) then glockToolAttachmentPart = nil end
+        end
+        if glockToolInstance and glockToolAttachmentPart then
+            for id, fakePart in pairs(s3_fakeToolParts) do
+                if fakePart and fakePart.Parent then
+                    if masterTransparency then fakePart.Transparency = masterTransparency
+                    else
+                        local meshConfig; for _, cfg in ipairs(glock_customMeshes) do if cfg.id == id then meshConfig = cfg; break end end
+                        if meshConfig then
+                            if meshConfig.isSilencer then fakePart.Transparency = meshConfig.visible and 0 or 1 else fakePart.Transparency = 0 end
+                        else fakePart.Transparency = 0 end
+                    end
+                end
+            end
+        end
+    end
+
+    if decalBlock_instance and decalBlock_instance.Parent then
+        decalBlock_instance.Transparency = masterTransparency or 0 
+    end
+    if vehicleDecal_instance and vehicleDecal_instance.Parent then
+        vehicleDecal_instance.Transparency = masterTransparency or 0 
+    end
+    
+    if vehicleAttachedMesh_data.meshPart and vehicleAttachedMesh_data.meshPart.Parent then
+        vehicleAttachedMesh_data.meshPart.Transparency = vehicleAttachedMesh_transparency -- Always use its own config, ignore masterTransparency
+    end
+end)
+
+--============================================================================
+-- INPUT HANDLERS (Main Script - Minimal)
+--============================================================================
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if gameProcessedEvent and input.UserInputType ~= Enum.UserInputType.MouseButton2 then return end 
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
+end)
+
+--============================================================================
+-- INITIALIZATION
+--============================================================================
+local function initializeDualWeaponBulletCasingSystem()
+    task.spawn(function()
+        local char = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+        
+        local holdingRightClick = false
+        local mouseDown = false
+        local lastClickTime = 0
+        local clickCooldown = 0 
+
+        local function assignCharacterToGroup(characterModel)
+            if characterModel then
+                for _, partInCharacter in ipairs(characterModel:GetDescendants()) do
+                    if partInCharacter:IsA("BasePart") then
+                        pcall(function()
+                            PhysicsService:SetPartCollisionGroup(partInCharacter, playerCollisionGroupName)
+                        end)
+                    end
+                end
+            end
+        end
+        
+        if char then assignCharacterToGroup(char) end 
+        local assignCharGroupConn = localPlayer.CharacterAdded:Connect(assignCharacterToGroup)
+        table.insert(bulletSystem_activeConnections, assignCharGroupConn)
+
+        local inputBeganConn_MB2 = UserInputService.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton2 then
+                holdingRightClick = true
+            end
+        end)
+        table.insert(bulletSystem_activeConnections, inputBeganConn_MB2)
+
+        local inputEndedConn_MB2 = UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton2 then
+                holdingRightClick = false
+            end
+        end)
+        table.insert(bulletSystem_activeConnections, inputEndedConn_MB2)
+
+        local function fireGlockCasingOnClick()
+            local currentCharacterForBullet = localPlayer.Character
+            if not currentCharacterForBullet then return end
+            if currentCharacterForBullet:FindFirstChild(s3_CONFIG_GlockToolName) then
+                crearBalaGlock()
+            end
+        end
+
+        local inputBeganConn_MB1 = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+            if gameProcessed then return end
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                if holdingRightClick then
+                    local now = tick()
+                    if now - lastClickTime > clickCooldown then
+                        lastClickTime = now
+                        fireGlockCasingOnClick() 
+                    end
+                end
+            end
+        end)
+        table.insert(bulletSystem_activeConnections, inputBeganConn_MB1)
+        
+        local renderSteppedConn_bullet = RunService.RenderStepped:Connect(function()
+            local isDown = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+            if isDown and holdingRightClick then
+                if not mouseDown then 
+                    local now = tick()
+                    if now - lastClickTime > clickCooldown then
+                        lastClickTime = now
+                        fireGlockCasingOnClick() 
+                    end
+                end
+                mouseDown = true
+            elseif not isDown then
+                mouseDown = false
+            end
+        end)
+        table.insert(bulletSystem_activeConnections, renderSteppedConn_bullet)
+    end)
+end
+
+
+setupBimboLockGUIMonitoring() 
+s4_checkVehiclesFolder() 
+
+if localPlayer.Character then
+    onCharacterAdded(localPlayer.Character)
+end
+mainCharacterAddedConnection = localPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+initializePlayerVehicleMonitoring() 
+initializeDualWeaponBulletCasingSystem()
+
+task.spawn(function()
+    local playerName = localPlayer.Name
+    if playerName then
+        applyCustomVehicleModificationsByVixel(playerName) 
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(leavingPlayer)
+    if leavingPlayer == localPlayer then
+        if s4_humanoidSeatedConnection then s4_humanoidSeatedConnection:Disconnect(); s4_humanoidSeatedConnection = nil end
+        s4_cleanupNeonCharacterPartsAndConnections() 
+        if s4_screenGui_Neon and s4_screenGui_Neon.Parent then s4_screenGui_Neon:Destroy() end
+        s4_screenGui_Neon = nil; s4_toggleButton_Neon = nil
+        s4_lightStateToRestore_Neon = nil; s4_areMeshesHiddenBySeat = false
+        
+        cleanupDecalBlockSystem() 
+        cleanupVehicleDecalBlockSystem() 
+        cleanupVehicleAttachedMesh() 
+
+        if playerGuiChildAddedConn_BetaLock then playerGuiChildAddedConn_BetaLock:Disconnect(); playerGuiChildAddedConn_BetaLock = nil; end
+        if playerGuiChildRemovedConn_BetaLock then playerGuiChildRemovedConn_BetaLock:Disconnect(); playerGuiChildRemovedConn_BetaLock = nil; end
+        if BimboLockGUIDestroyingConn then BimboLockGUIDestroyingConn:Disconnect(); BimboLockGUIDestroyingConn = nil; end
+        BimboLockGUIInstance = nil
+        headAccessoryIsRedDueToBetaLock = false 
+
+        if s2_m4MagSizeAttributeConnection then 
+            s2_m4MagSizeAttributeConnection:Disconnect()
+            s2_m4MagSizeAttributeConnection = nil
+        end
+        s2_m4LastMagSize = nil
+
+        for _, conn in ipairs(bulletSystem_activeConnections) do
+            if conn and conn.Connected then conn:Disconnect() end
+        end
+        table.clear(bulletSystem_activeConnections)
+
+        for _, conn in ipairs(vehicleMonitor_Connections) do
+            if conn and conn.Connected then conn:Disconnect() end
+        end
+        table.clear(vehicleMonitor_Connections)
+        table.clear(vehicleMonitor_LastHealthValues)
+
+        if currentCharacter and healthReactiveNeonCleaners[currentCharacter] then
+            healthReactiveNeonCleaners[currentCharacter]()
+            healthReactiveNeonCleaners[currentCharacter] = nil 
+        end
+        for char_key, cleaner_func in pairs(healthReactiveNeonCleaners) do
+            pcall(cleaner_func) 
+        end
+        healthReactiveNeonCleaners = {}
+
+        if mainCharacterAddedConnection then 
+            mainCharacterAddedConnection:Disconnect()
+            mainCharacterAddedConnection = nil
+        end
+        for _, conn in ipairs(characterConnections) do 
+            conn:Disconnect()
+        end
+        table.clear(characterConnections)
+        currentCharacter = nil 
+    end
+end)
